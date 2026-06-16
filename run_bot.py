@@ -12,6 +12,6 @@ root_logger.addHandler(sh)
 if __name__ == "__main__":
     import os
     port = int(os.getenv("PORT", 8000))
-    host = "0.0.0.0" if os.getenv("PORT") else "127.0.0.1"
+    host = "0.0.0.0"
     print(f"Launching Uvicorn server on {host}:{port}...")
     uvicorn.run("main:app", host=host, port=port, reload=False)
