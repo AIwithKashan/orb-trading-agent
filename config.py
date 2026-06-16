@@ -8,6 +8,7 @@ load_dotenv(dotenv_path=env_path)
 
 # Firebase Configuration
 FIREBASE_SERVICE_ACCOUNT_PATH: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")
+FIREBASE_SERVICE_ACCOUNT_JSON: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON", "")
 FIREBASE_WEB_API_KEY: str = os.getenv("FIREBASE_WEB_API_KEY", "")
 FIREBASE_AUTH_DOMAIN: str = os.getenv("FIREBASE_AUTH_DOMAIN", "")
 FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "")

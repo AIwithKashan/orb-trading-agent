@@ -10,5 +10,8 @@ sh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(messa
 root_logger.addHandler(sh)
 
 if __name__ == "__main__":
-    print("Launching Uvicorn server on port 8000...")
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
+    import os
+    port = int(os.getenv("PORT", 8000))
+    host = "0.0.0.0" if os.getenv("PORT") else "127.0.0.1"
+    print(f"Launching Uvicorn server on {host}:{port}...")
+    uvicorn.run("main:app", host=host, port=port, reload=False)

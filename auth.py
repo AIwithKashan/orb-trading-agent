@@ -22,12 +22,19 @@ def init_firebase() -> bool:
         return True
     
     sa_path = config.FIREBASE_SERVICE_ACCOUNT_PATH
-    if not sa_path:
-        logger.warning("FIREBASE_SERVICE_ACCOUNT_PATH not set. Firebase features disabled.")
+    sa_json = config.FIREBASE_SERVICE_ACCOUNT_JSON
+    
+    if not sa_path and not sa_json:
+        logger.warning("Neither FIREBASE_SERVICE_ACCOUNT_PATH nor FIREBASE_SERVICE_ACCOUNT_JSON is set. Firebase features disabled.")
         return False
     
     try:
-        cred = credentials.Certificate(sa_path)
+        if sa_json:
+            import json
+            cred_dict = json.loads(sa_json)
+            cred = credentials.Certificate(cred_dict)
+        else:
+            cred = credentials.Certificate(sa_path)
         _firebase_app = firebase_admin.initialize_app(cred)
         _firestore_client = firestore.client()
         logger.info("Firebase Admin SDK initialized successfully.")
