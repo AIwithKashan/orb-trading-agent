@@ -1,0 +1,13 @@
+# Virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Local configurations and sensitive secrets
+.env
+firebase-service-account.json
+firebase_service_account.json
+*.log
+
+# Internal temporary/antigravity folders
+antigravity-awesome-skills-*/

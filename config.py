@@ -1,0 +1,22 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in the project root directory
+env_path = Path(__file__).resolve().parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
+# Firebase Configuration
+FIREBASE_SERVICE_ACCOUNT_PATH: str = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")
+FIREBASE_WEB_API_KEY: str = os.getenv("FIREBASE_WEB_API_KEY", "")
+FIREBASE_AUTH_DOMAIN: str = os.getenv("FIREBASE_AUTH_DOMAIN", "")
+FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "")
+
+# Encryption key for API keys at rest (Fernet)
+ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
+
+# Alpaca defaults (used only for fallback / testing)
+ALPACA_BASE_URL: str = os.getenv("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")
+
+# Operation Mode
+DRY_RUN_MODE: bool = os.getenv("DRY_RUN_MODE", "false").lower() in ("true", "1", "yes")

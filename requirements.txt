@@ -1,0 +1,7 @@
+python-dotenv
+alpaca-trade-api
+fastapi
+uvicorn
+firebase-admin
+cryptography
+pytz
