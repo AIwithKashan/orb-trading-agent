@@ -212,10 +212,21 @@ def run_bot_loop(bot: UserBot) -> None:
                     tracker = bot.trackers[symbol]
                     try:
                         if bot.broker and not bot.dry_run:
-                            bars = bot.broker.api.get_bars(
-                                symbol=symbol, timeframe="5Min",
-                                start=start_dt.isoformat(), end=end_dt.isoformat()
-                            )
+                            try:
+                                bars = bot.broker.api.get_bars(
+                                    symbol=symbol, timeframe="5Min",
+                                    start=start_dt.isoformat(), end=end_dt.isoformat(),
+                                    feed="sip"
+                                )
+                            except Exception as e:
+                                if "sip" in str(e).lower():
+                                    bars = bot.broker.api.get_bars(
+                                        symbol=symbol, timeframe="5Min",
+                                        start=start_dt.isoformat(), end=end_dt.isoformat(),
+                                        feed="iex"
+                                    )
+                                else:
+                                    raise e
                             tracker.calculate_orb_levels(bars)
                         else:
                             # Dry-run mock levels

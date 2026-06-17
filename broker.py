@@ -39,7 +39,13 @@ class AlpacaBroker:
             
         try:
             cleaned = [sym.upper() for sym in symbols]
-            trades = self.api.get_latest_trades(cleaned)
+            try:
+                trades = self.api.get_latest_trades(cleaned, feed="sip")
+            except Exception as e:
+                if "sip" in str(e).lower():
+                    trades = self.api.get_latest_trades(cleaned, feed="iex")
+                else:
+                    raise e
             for symbol, trade in trades.items():
                 prices[symbol] = float(trade.price)
             return prices
