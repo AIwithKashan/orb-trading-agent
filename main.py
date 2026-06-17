@@ -1,7 +1,8 @@
 import logging
+import asyncio
 from typing import Dict, Any, Optional
-from fastapi import FastAPI, Depends, HTTPException, Header
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import FastAPI, Depends, HTTPException, Header, Query
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from pathlib import Path
 
 import config
@@ -94,6 +95,71 @@ def get_favicon_ico():
     if favicon_path.exists():
         return FileResponse(favicon_path, media_type="image/png")
     return HTMLResponse(status_code=204)
+
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    """System health check endpoint."""
+    db_ok = False
+    try:
+        db = auth.get_firestore_client()
+        if db is not None:
+            db_ok = True
+    except Exception:
+        pass
+        
+    return {
+        "status": "healthy" if db_ok else "unhealthy",
+        "database": "connected" if db_ok else "disconnected",
+        "uptime": "operational"
+    }
+
+
+async def log_generator(uid: str):
+    # Keep track of logs we've sent to this specific client connection
+    sent_logs = set()
+    
+    # Send all historical logs first
+    bot = bot_manager.get_bot(uid)
+    if bot:
+        for log in list(bot.logs):
+            yield f"data: {log}\n\n"
+            sent_logs.add(log)
+            
+    while True:
+        bot = bot_manager.get_bot(uid)
+        if bot:
+            current_logs = list(bot.logs)
+            for log in current_logs:
+                if log not in sent_logs:
+                    yield f"data: {log}\n\n"
+                    sent_logs.add(log)
+            # Prevent set from growing infinitely
+            if len(sent_logs) > 100:
+                sent_logs = set(current_logs[-50:])
+        else:
+            standby_log = "[SYSTEM] Bot is standby / stopped."
+            if standby_log not in sent_logs:
+                yield f"data: {standby_log}\n\n"
+                sent_logs.add(standby_log)
+                
+        await asyncio.sleep(1)
+
+
+@app.get("/api/stream-logs")
+async def stream_logs(token: Optional[str] = Query(None)):
+    """SSE endpoint streaming live console logs for the active user bot."""
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token is required")
+        
+    decoded = auth.verify_id_token(token)
+    if not decoded:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    uid = decoded["uid"]
+    return StreamingResponse(log_generator(uid), media_type="text/event-stream")
+
 
 @app.get("/api/config")
 def get_public_config() -> Dict[str, Any]:

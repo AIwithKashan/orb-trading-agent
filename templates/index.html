@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QUANTUM DECK // ORB TRADING SYSTEM</title>
+    
+    <!-- Open Graph SEO Metadata -->
+    <meta property="og:title" content="QUANTUM DECK // ORB Trading System">
+    <meta property="og:description" content="AI-powered automated stock breakout trading. Cloud-native. AES-256 encrypted.">
+    <meta property="og:image" content="https://aiwithkashan-orb-trading-agent.hf.space/static/logo.png">
+    <meta property="og:url" content="https://huggingface.co/spaces/aiwithkashan/orb-trading-agent">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="QUANTUM DECK // ORB Trading System">
+    <meta name="twitter:description" content="AI-powered automated stock breakout trading. Cloud-native. AES-256 encrypted.">
+    <meta name="twitter:image" content="https://aiwithkashan-orb-trading-agent.hf.space/static/logo.png">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- GSAP for scroll-driven tech animations -->
@@ -11,6 +25,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <!-- Three.js for immersive 3D graphics -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Chart.js for real-time equity curves -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- TradingView standard widget library -->
@@ -195,33 +211,65 @@
         <!-- ========================================== -->
         <!-- SIGN IN / AUTHENTICATION INTERFACE -->
         <!-- ========================================== -->
-        <div id="auth-panel" class="hidden my-auto flex flex-col items-center justify-center space-y-8 py-12">
-            <div class="text-center space-y-4 max-w-md">
+        <div id="auth-panel" class="hidden my-auto flex flex-col items-center justify-center space-y-10 py-10 w-full max-w-5xl mx-auto">
+            <!-- Hero Header -->
+            <div class="text-center space-y-4 max-w-2xl">
                 <div class="inline-flex p-2 bg-slate-900/10 border border-slate-200/50 rounded-2xl shadow-md mb-2">
-                    <img src="/static/logo.png" class="w-16 h-16 object-contain rounded-xl">
+                    <img src="/static/logo.png" class="w-20 h-20 object-contain rounded-xl">
                 </div>
-                <h1 class="tech-font text-2xl md:text-3xl font-black text-slate-800 tracking-wider">
-                    ORB QUANTUM CONTROL
+                <h1 class="tech-font text-3xl md:text-5xl font-black text-slate-800 tracking-tight leading-none">
+                    QUANTUM DECK
                 </h1>
-                <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">Secure Cloud Algorithmic Portal</p>
-                <p class="text-sm text-slate-500 font-medium">
-                    A cloud-native SaaS station scanning Regular Market Open Breakouts for liquid US Equities. Protected via end-to-end data encryption.
+                <p class="text-xs font-black tracking-[0.25em] text-blue-600 uppercase">Automated ORB Trading, Engineered for Precision</p>
+                <p class="text-sm text-slate-500 max-w-lg mx-auto leading-relaxed">
+                    A high-performance algorithmic workstation running the Opening Range Breakout strategy in the cloud 24/7.
                 </p>
             </div>
 
-            <div class="glass-panel p-8 rounded-xl max-w-sm w-full text-center space-y-6">
-                <h2 class="tech-font text-xs font-bold text-slate-700 tracking-widest uppercase mb-2">ACCESS TERMINAL</h2>
-                <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold border border-slate-200 rounded-lg shadow-sm transition-all duration-300">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
-                    <span>Authenticate via Google</span>
+            <!-- 4 Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full max-w-4xl">
+                <!-- Card 1 -->
+                <div class="glass-panel p-5 rounded-xl space-y-2 border border-slate-200/40 text-center md:text-left">
+                    <div class="inline-flex p-2 bg-blue-50 border border-blue-100 rounded-lg text-blue-600 mb-2">
+                        <i class="ph ph-cpu text-lg"></i>
+                    </div>
+                    <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider uppercase">ORB Engine</h3>
+                    <p class="text-[10px] text-slate-450 leading-relaxed">Scans 50 major US stocks simultaneously. Computes precise 5-minute opening range boundaries at market open.</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="glass-panel p-5 rounded-xl space-y-2 border border-slate-200/40 text-center md:text-left">
+                    <div class="inline-flex p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-600 mb-2">
+                        <i class="ph ph-lock text-lg"></i>
+                    </div>
+                    <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider uppercase">AES-256 Security</h3>
+                    <p class="text-[10px] text-slate-450 leading-relaxed">Alpaca API credentials are encrypted symmetrically at rest (Fernet) inside isolated Firestore cloud databases.</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="glass-panel p-5 rounded-xl space-y-2 border border-slate-200/40 text-center md:text-left">
+                    <div class="inline-flex p-2 bg-amber-50 border border-amber-100 rounded-lg text-amber-600 mb-2">
+                        <i class="ph ph-activity text-lg"></i>
+                    </div>
+                    <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider uppercase">Paper & Live</h3>
+                    <p class="text-[10px] text-slate-450 leading-relaxed">Seamlessly toggle between risk-free Dry-Run simulations, Paper accounts, or live production executions.</p>
+                </div>
+                <!-- Card 4 -->
+                <div class="glass-panel p-5 rounded-xl space-y-2 border border-slate-200/40 text-center md:text-left">
+                    <div class="inline-flex p-2 bg-purple-50 border border-purple-100 rounded-lg text-purple-600 mb-2">
+                        <i class="ph ph-users text-lg"></i>
+                    </div>
+                    <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider uppercase">Cloud Multi-User</h3>
+                    <p class="text-[10px] text-slate-450 leading-relaxed">Spawns dedicated user background threads. Trade metrics and history persistent across all sign-in sessions.</p>
+                </div>
+            </div>
+
+            <!-- Glowing Launch Terminal CTA -->
+            <div class="glass-panel p-6 rounded-xl max-w-sm w-full text-center space-y-4 shadow-xl border border-blue-100/60 bg-white/95">
+                <h2 class="tech-font text-[10px] font-bold text-slate-700 tracking-widest uppercase">INITIALIZE TERMINAL SESSION</h2>
+                <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 px-5 py-3.5 bg-blue-650 hover:bg-blue-700 text-white font-bold tracking-widest text-xs uppercase rounded-lg shadow-lg shadow-blue-200/50 hover:shadow-blue-300/60 border border-blue-600 transition-all duration-300 hover:-translate-y-0.5">
+                    <span>Launch Terminal &rarr;</span>
                 </button>
-                <div class="text-[9px] text-slate-400 uppercase tracking-wider font-bold">
-                    Authenticated session secured by Firebase Auth
+                <div class="text-[8px] text-slate-400 uppercase tracking-widest font-bold">
+                    Secure identity assertion via Google Firebase
                 </div>
             </div>
         </div>
@@ -237,9 +285,15 @@
                         <img src="/static/logo.png" class="w-8 h-8 object-contain rounded-lg">
                     </div>
                     <div>
-                        <h1 class="tech-font text-sm md:text-base font-black tracking-widest text-slate-800">
-                            QUANTUM DECK
-                        </h1>
+                        <div class="flex items-center gap-2">
+                            <h1 class="tech-font text-sm md:text-base font-black tracking-widest text-slate-800">
+                                QUANTUM DECK
+                            </h1>
+                            <div id="system-status-badge" class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-[8px] font-bold text-emerald-650 uppercase tracking-wider">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                Operational
+                            </div>
+                        </div>
                         <p class="text-[9px] font-bold tracking-wider text-slate-450 uppercase">US Stocks ORB System</p>
                     </div>
                 </div>
@@ -492,6 +546,14 @@
                     </div>
                 </div>
 
+                <!-- Equity Curve Chart Panel -->
+                <div class="glass-panel p-5 rounded-xl">
+                    <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase mb-4 border-b border-slate-100 pb-2">EQUITY CURVE // REALIZED CUMULATIVE P&L</h3>
+                    <div class="w-full h-[220px] relative">
+                        <canvas id="equity-chart"></canvas>
+                    </div>
+                </div>
+                
                 <!-- History Database Table -->
                 <div class="glass-panel p-5 rounded-xl">
                     <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
@@ -790,10 +852,14 @@
             </div>
 
             <!-- Footer information -->
-            <!-- Footer information -->
             <footer class="flex flex-col md:flex-row justify-between items-center text-slate-400 text-[8px] uppercase tracking-[0.2em] font-bold pt-6 border-t border-slate-200/60 gap-3">
-                <span>STARK SUITE // SECURE EQUITY AGENT v3.1</span>
-                <span>SYSTEM CORE RUNNING // MULTI-USER CLOUD PERSISTENCE ACTIVE</span>
+                <span>© 2025 AIwithKashan — QUANTUM DECK <span onclick="openChangelogModal()" class="cursor-pointer text-blue-650 hover:underline">v3.1 ●</span></span>
+                <span class="flex items-center gap-3">
+                    <a href="#" onclick="switchTab('docs'); scrollToDocSection('doc-security');" class="hover:text-slate-700 transition-colors">Terms of Use</a> | 
+                    <a href="#" onclick="switchTab('docs'); scrollToDocSection('doc-security');" class="hover:text-slate-700 transition-colors">Privacy Policy</a> | 
+                    <a href="#" onclick="switchTab('docs');" class="hover:text-slate-700 transition-colors font-extrabold">Documentation</a>
+                </span>
+                <span>Powered by Alpaca API + Firebase</span>
             </footer>
         </div>
 
@@ -881,6 +947,81 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Changelog / Version Modal Overlay -->
+    <div id="changelog-modal" class="fixed inset-0 bg-slate-900/40 backdrop-filter backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-6 rounded-2xl space-y-6 shadow-2xl relative border border-slate-200/50 bg-slate-900 text-slate-100">
+            <button onclick="closeChangelogModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+            <div class="text-center border-b border-slate-800 pb-3">
+                <h3 class="tech-font text-xs font-bold text-blue-400 tracking-widest uppercase">System Changelog Log</h3>
+                <p class="text-[8px] text-slate-400 uppercase tracking-widest mt-1">Release History telemetry</p>
+            </div>
+            <div class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar text-xs leading-relaxed mono-font">
+                <div>
+                    <div class="flex justify-between items-center text-blue-400 font-bold border-b border-slate-800 pb-1 mb-1">
+                        <span>v3.1.0 (Stable)</span>
+                        <span class="text-[9px] text-slate-500">2026-06-17</span>
+                    </div>
+                    <ul class="list-disc pl-4 text-slate-300 space-y-0.5 text-[11px]">
+                        <li>Added AES-256 Fernet Alpaca keys encryption at rest.</li>
+                        <li>Implemented customizable Stop-Loss (SL) & Take-Profit (TP) parameters.</li>
+                        <li>Added End-of-Day (EOD) automated position liquidation.</li>
+                        <li>Integrated Chart.js cumulative equity curve analysis.</li>
+                        <li>Added SSE system console log streaming.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center text-slate-450 font-bold border-b border-slate-800 pb-1 mb-1">
+                        <span>v3.0.0 (Beta)</span>
+                        <span class="text-[9px] text-slate-500">2026-06-15</span>
+                    </div>
+                    <ul class="list-disc pl-4 text-slate-450 space-y-0.5 text-[11px]">
+                        <li>Migrated database logging from Airtable to Cloud Firestore.</li>
+                        <li>Multi-user profile onboarding registration setup.</li>
+                        <li>Dynamic inline TradingView widget charting integrations.</li>
+                        <li>GSAP custom notification Toast messaging implementation.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center text-slate-450 font-bold border-b border-slate-800 pb-1 mb-1">
+                        <span>v2.0.0</span>
+                        <span class="text-[9px] text-slate-500">2026-06-10</span>
+                    </div>
+                    <ul class="list-disc pl-4 text-slate-450 space-y-0.5 text-[11px]">
+                        <li>Developed multi-threaded UserBot thread registry model.</li>
+                        <li>Implemented Opening Range Breakout (ORB) calculation brackets.</li>
+                        <li>Enabled Alpaca broker execution capabilities.</li>
+                    </ul>
+                </div>
+            </div>
+            <button onclick="closeChangelogModal()" class="w-full py-2 bg-blue-650 hover:bg-blue-700 text-white font-bold tracking-widest text-[10px] uppercase rounded-lg shadow-md transition-all">
+                Dismiss Log
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Warning Overlay Modal -->
+    <div id="mobile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-filter backdrop-blur-lg z-[99] hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl text-center space-y-5 shadow-2xl border border-amber-200/50 bg-white/95">
+            <div class="inline-flex p-3 bg-amber-50 border border-amber-100 rounded-xl text-amber-600 animate-bounce">
+                <i class="ph ph-warning text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider">DESKTOP OPTIMIZATION WARNING</h3>
+                <p class="text-[8px] text-amber-600 uppercase tracking-widest font-bold mt-1">Viewport optimization check</p>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-relaxed">
+                ⚠️ QUANTUM DECK is optimized for desktop viewports. For the best algorithmic monitoring experience, please open this terminal on a laptop or PC.
+            </p>
+            <button onclick="dismissMobileWarning()" class="w-full py-3.5 bg-blue-650 hover:bg-blue-700 text-white font-bold tracking-widest text-[10px] uppercase rounded-lg shadow-md transition-all duration-300">
+                Continue Anyway &rarr;
+            </button>
+        </div>
+    </div>
+
     <!-- Beautiful Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
 
@@ -1068,6 +1209,14 @@
                             fetchBotState();
                             if (uiPollInterval) clearInterval(uiPollInterval);
                             uiPollInterval = setInterval(fetchBotState, 3000);
+                            
+                            // Initialize SSE system logs and health status checks
+                            startLogsSSE();
+                            checkSystemHealth();
+                            setInterval(checkSystemHealth, 30000);
+                            
+                            // Initialize mobile device check
+                            checkMobileDevice();
                         } else {
                             signOutUser();
                         }
@@ -1103,6 +1252,205 @@
             }
         }
 
+        // =====================================================================
+        // UPGRADE HELPER FUNCTIONS & STATE MANAGERS
+        // =====================================================================
+        let logEventSource = null;
+        let equityChartInstance = null;
+        let lastBotState = { trade_count: 0, trades_len: 0, bot_running: false };
+
+        // Check system operational status
+        async function checkSystemHealth() {
+            try {
+                const res = await fetch('/api/health');
+                const badge = document.getElementById('system-status-badge');
+                if (!badge) return;
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'healthy') {
+                        badge.className = "flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-[8px] font-bold text-emerald-650 uppercase tracking-wider";
+                        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>Operational`;
+                        return;
+                    }
+                }
+                
+                badge.className = "flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 border border-red-150 text-[8px] font-bold text-red-600 uppercase tracking-wider";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Degraded`;
+            } catch (err) {
+                const badge = document.getElementById('system-status-badge');
+                if (badge) {
+                    badge.className = "flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 border border-red-150 text-[8px] font-bold text-red-600 uppercase tracking-wider";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Degraded`;
+                }
+            }
+        }
+
+        // Start SSE Log Stream
+        function startLogsSSE() {
+            if (logEventSource) {
+                logEventSource.close();
+            }
+            if (!idToken) return;
+            
+            const consoleDiv = document.getElementById('console-logs');
+            if (consoleDiv) consoleDiv.innerHTML = ''; // Reset terminal console view on load
+            
+            logEventSource = new EventSource(`/api/stream-logs?token=${idToken}`);
+            
+            logEventSource.onmessage = function(event) {
+                appendConsoleLog(event.data);
+            };
+            
+            logEventSource.onerror = function(err) {
+                console.error("SSE stream error:", err);
+            };
+        }
+
+        // Close SSE Log Stream
+        function stopLogsSSE() {
+            if (logEventSource) {
+                logEventSource.close();
+                logEventSource = null;
+            }
+        }
+
+        // Append log line with color matching in console terminal container
+        function appendConsoleLog(log) {
+            const consoleDiv = document.getElementById('console-logs');
+            if (!consoleDiv) return;
+            
+            // Deduplicate lines to avoid screen flickering
+            const latestDivs = Array.from(consoleDiv.children).slice(-10);
+            if (latestDivs.some(div => div.textContent === log)) {
+                return;
+            }
+            
+            const logClass = log.includes('[ERROR]') ? 'text-red-400 font-semibold' : 
+                             log.includes('[WARNING]') ? 'text-amber-400 font-semibold' : 
+                             log.includes('[SYSTEM]') ? 'text-blue-400 font-bold' :
+                             log.includes('[LIQUIDATE]') ? 'text-red-500 font-bold' :
+                             'text-emerald-450';
+            
+            consoleDiv.insertAdjacentHTML('beforeend', `<div class="${logClass}">${log}</div>`);
+            
+            // Cap visual history log list to 150 items
+            if (consoleDiv.children.length > 150) {
+                consoleDiv.removeChild(consoleDiv.firstChild);
+            }
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
+            // Trigger global dynamic toasts based on log events
+            if (log.includes('[LIQUIDATE]')) {
+                showToast("🔴 EOD Liquidation triggered", "warning");
+            } else if (log.includes('breakout detected')) {
+                const parts = log.split(' ');
+                const symbol = parts[1] || 'Asset';
+                const side = log.toLowerCase().includes('buy') ? 'BUY' : 'SELL';
+                showToast(`🚀 Trade executed: ${symbol} ${side}`, "success");
+            } else if (log.includes('limit reached') || log.includes('limit (')) {
+                showToast("⚠️ Daily trade limit reached", "warning");
+            }
+        }
+
+        // Equity Curve Line Chart Builder (Chart.js)
+        function updateEquityChart(trades) {
+            const canvas = document.getElementById('equity-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Clone and reverse to ensure chronological order
+            const sortedTrades = [...trades].reverse();
+            
+            let labels = [];
+            let pnlData = [];
+            let cumulative = 0;
+            
+            if (sortedTrades.length === 0) {
+                labels = ["Start", "Session 1", "Session 2", "Session 3", "Current"];
+                pnlData = [0, 0, 0, 0, 0];
+            } else {
+                labels.push("Start");
+                pnlData.push(0);
+                
+                sortedTrades.forEach(trade => {
+                    const tradePnl = trade.pnl !== null ? trade.pnl : 0.0;
+                    cumulative += tradePnl;
+                    const dateStr = new Date(trade.timestamp).toLocaleDateString(undefined, {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                    labels.push(dateStr);
+                    pnlData.push(cumulative);
+                });
+            }
+            
+            if (equityChartInstance) {
+                equityChartInstance.destroy();
+            }
+            
+            const isDark = document.body.classList.contains('dark-theme');
+            const lineColor = '#10b981'; 
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            
+            equityChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Realized P&L ($)',
+                        data: pnlData,
+                        borderColor: lineColor,
+                        borderWidth: 2,
+                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                        fill: true,
+                        tension: 0.15,
+                        pointRadius: sortedTrades.length === 0 ? 0 : 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 8 } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 8 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Changelog Modal
+        function openChangelogModal() {
+            document.getElementById('changelog-modal').classList.remove('hidden');
+        }
+        function closeChangelogModal() {
+            document.getElementById('changelog-modal').classList.add('hidden');
+        }
+
+        // Mobile warnings checks
+        function checkMobileDevice() {
+            if (window.innerWidth < 768) {
+                const dismissed = localStorage.getItem('mobileWarningDismissed');
+                if (!dismissed) {
+                    document.getElementById('mobile-modal').classList.remove('hidden');
+                }
+            }
+        }
+        function dismissMobileWarning() {
+            document.getElementById('mobile-modal').classList.add('hidden');
+            localStorage.setItem('mobileWarningDismissed', 'true');
+        }
+
         // Authentication Flows
         async function signInWithGoogle() {
             try {
@@ -1117,6 +1465,7 @@
         async function signOutUser() {
             try {
                 if (uiPollInterval) clearInterval(uiPollInterval);
+                stopLogsSSE();
                 await firebase.auth().signOut();
                 currentUser = null;
                 idToken = null;
@@ -1242,64 +1591,79 @@
             const searchQuery = document.getElementById('search-input').value.toUpperCase();
             grid.innerHTML = '';
 
-            const tickers = Object.keys(currentLevels).length > 0 ? Object.keys(currentLevels) : ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "NFLX", "AMD", "INTC"];
-            
-            tickers.forEach(symbol => {
-                const levels = currentLevels[symbol] || { orb_high: 0, orb_low: 0, orb_mid: 0 };
-                const price = currentStatus.prices[symbol] || levels.orb_mid || 0.0;
-                
-                if (searchQuery && !symbol.includes(searchQuery)) return;
-
-                let isBreakout = false;
-                let breakoutBadgeClass = "text-slate-400 bg-slate-100 border border-slate-200";
-                let breakoutText = "STANDARD";
-                let cardBorder = "border-slate-200";
-
-                if (levels.orb_high > 0) {
-                    if (price >= levels.orb_high) {
-                        breakoutBadgeClass = "text-emerald-750 bg-emerald-50 border border-emerald-200 shadow-sm font-bold";
-                        breakoutText = "BULLISH";
-                        cardBorder = "border-emerald-500/50 neon-border-green bg-emerald-50/10";
-                        isBreakout = true;
-                    } else if (price <= levels.orb_low) {
-                        breakoutBadgeClass = "text-red-750 bg-red-50 border border-red-200 shadow-sm font-bold";
-                        breakoutText = "BEARISH";
-                        cardBorder = "border-red-500/50 neon-border-red bg-red-50/10";
-                        isBreakout = true;
-                    }
-                }
-
-                if (currentFilter === 'breakouts' && !isBreakout) return;
-
-                const tvLink = `https://www.tradingview.com/symbols/${symbol}/`;
-
-                const cardHtml = `
-                    <div onclick="loadTradingViewWidget('${symbol}')" class="glass-panel border ${cardBorder} p-3 rounded-lg flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-200">
-                        <div>
-                            <div class="flex justify-between items-center">
-                                <span class="tech-font text-xs font-bold text-slate-800">${symbol}</span>
-                                <span class="text-[8px] font-black px-1.5 py-0.5 rounded ${breakoutBadgeClass}">${breakoutText}</span>
-                            </div>
-                            <div class="flex justify-between items-baseline mt-2">
-                                <div class="mono-font text-base font-bold text-slate-800">$${price.toFixed(2)}</div>
-                                <span class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-wider">
-                                    Load Chart <i class="ph ph-chart-line-up"></i>
-                                </span>
-                            </div>
+            const hasLevels = Object.keys(currentLevels).length > 0;
+            if (!hasLevels) {
+                // Render loading skeleton
+                grid.innerHTML = Array(8).fill(0).map(() => `
+                    <div class="glass-panel border border-slate-200 p-3 rounded-lg space-y-4 animate-pulse">
+                        <div class="flex justify-between items-center">
+                            <div class="h-3.5 w-12 bg-slate-200 rounded"></div>
+                            <div class="h-4 w-14 bg-slate-200 rounded"></div>
                         </div>
-                        
-                        <div class="mt-2.5 pt-1.5 border-t border-slate-200/50 flex flex-col gap-0.5 text-[8px] text-slate-400 uppercase font-mono">
-                            <div class="flex justify-between"><span>HIGH:</span> <span class="text-emerald-600 font-bold">$${levels.orb_high.toFixed(2)}</span></div>
-                            <div class="flex justify-between"><span>MID:</span> <span class="text-slate-650 font-bold">$${levels.orb_mid.toFixed(2)}</span></div>
-                            <div class="flex justify-between"><span>LOW:</span> <span class="text-red-600 font-bold">$${levels.orb_low.toFixed(2)}</span></div>
+                        <div class="h-6 w-20 bg-slate-200 rounded"></div>
+                        <div class="space-y-1.5 pt-2 border-t border-slate-200/50">
+                            <div class="h-2.5 w-full bg-slate-100 rounded"></div>
+                            <div class="h-2.5 w-2/3 bg-slate-100 rounded"></div>
                         </div>
                     </div>
-                `;
-                grid.insertAdjacentHTML('beforeend', cardHtml);
-            });
+                `).join('');
+            } else {
+                const tickers = Object.keys(currentLevels);
+                tickers.forEach(symbol => {
+                    const levels = currentLevels[symbol] || { orb_high: 0, orb_low: 0, orb_mid: 0 };
+                    const price = currentStatus.prices[symbol] || levels.orb_mid || 0.0;
+                    
+                    if (searchQuery && !symbol.includes(searchQuery)) return;
 
-            if (grid.children.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-6 text-center text-xs text-slate-400 uppercase font-semibold">No assets found matching filters.</div>`;
+                    let isBreakout = false;
+                    let breakoutBadgeClass = "text-slate-400 bg-slate-100 border border-slate-200";
+                    let breakoutText = "STANDARD";
+                    let cardBorder = "border-slate-200";
+
+                    if (levels.orb_high > 0) {
+                        if (price >= levels.orb_high) {
+                            breakoutBadgeClass = "text-emerald-750 bg-emerald-50 border border-emerald-200 shadow-sm font-bold";
+                            breakoutText = "BULLISH";
+                            cardBorder = "border-emerald-500/50 neon-border-green bg-emerald-50/10";
+                            isBreakout = true;
+                        } else if (price <= levels.orb_low) {
+                            breakoutBadgeClass = "text-red-750 bg-red-50 border border-red-200 shadow-sm font-bold";
+                            breakoutText = "BEARISH";
+                            cardBorder = "border-red-500/50 neon-border-red bg-red-50/10";
+                            isBreakout = true;
+                        }
+                    }
+
+                    if (currentFilter === 'breakouts' && !isBreakout) return;
+
+                    const cardHtml = `
+                        <div onclick="loadTradingViewWidget('${symbol}')" class="glass-panel border ${cardBorder} p-3 rounded-lg flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-200">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <span class="tech-font text-xs font-bold text-slate-800">${symbol}</span>
+                                    <span class="text-[8px] font-black px-1.5 py-0.5 rounded ${breakoutBadgeClass}">${breakoutText}</span>
+                                </div>
+                                <div class="flex justify-between items-baseline mt-2">
+                                    <div class="mono-font text-base font-bold text-slate-800">$${price.toFixed(2)}</div>
+                                    <span class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5 text-[8px] uppercase font-bold tracking-wider">
+                                        Load Chart <i class="ph ph-chart-line-up"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-2.5 pt-1.5 border-t border-slate-200/50 flex flex-col gap-0.5 text-[8px] text-slate-400 uppercase font-mono">
+                                <div class="flex justify-between"><span>HIGH:</span> <span class="text-emerald-600 font-bold">$${levels.orb_high.toFixed(2)}</span></div>
+                                <div class="flex justify-between"><span>MID:</span> <span class="text-slate-650 font-bold">$${levels.orb_mid.toFixed(2)}</span></div>
+                                <div class="flex justify-between"><span>LOW:</span> <span class="text-red-600 font-bold">$${levels.orb_low.toFixed(2)}</span></div>
+                            </div>
+                        </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', cardHtml);
+                });
+
+                if (grid.children.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full py-6 text-center text-xs text-slate-400 uppercase font-semibold">No assets found matching filters.</div>`;
+                }
             }
 
             // Render Orders Table
@@ -1336,19 +1700,17 @@
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="py-6 text-center text-slate-400 uppercase font-medium">No active trades recorded in this session.</td>
+                        <td colspan="10" class="py-12 text-center text-slate-400 uppercase font-medium">
+                            <div class="flex flex-col items-center justify-center space-y-3">
+                                <div class="relative w-12 h-12 flex items-center justify-center rounded-full bg-blue-50/50 border border-blue-100 text-blue-600">
+                                    <i class="ph ph-radar text-2xl animate-spin" style="animation-duration: 3s;"></i>
+                                </div>
+                                <div class="text-[10px] tracking-widest font-black uppercase text-slate-500">Scanning 50 assets for breakouts...</div>
+                            </div>
+                        </td>
                     </tr>
                 `;
             }
-
-            // Render Console logs
-            const consoleDiv = document.getElementById('console-logs');
-            consoleDiv.innerHTML = '';
-            currentStatus.logs.forEach(log => {
-                const logClass = log.includes('[ERROR]') ? 'text-red-400' : log.includes('[WARNING]') ? 'text-amber-400' : 'text-emerald-450';
-                consoleDiv.insertAdjacentHTML('beforeend', `<div class="${logClass}">${log}</div>`);
-            });
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
 
             // Sync Toggle Buttons
             const toggleBtn = document.getElementById('btn-toggle-bot');
@@ -1483,6 +1845,9 @@
                         </tr>
                     `;
                 }
+
+                // Render equity chart
+                updateEquityChart(data.trades || []);
 
             } catch (error) {
                 console.error("History fetch error:", error);
