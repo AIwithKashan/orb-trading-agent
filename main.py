@@ -78,6 +78,15 @@ def get_favicon():
     return HTMLResponse(status_code=204)
 
 
+@app.get("/static/logo.png")
+def get_logo():
+    """Serves the dashboard logo."""
+    logo_path = Path(__file__).resolve().parent / "static" / "logo.png"
+    if logo_path.exists():
+        return FileResponse(logo_path, media_type="image/png")
+    return HTMLResponse(status_code=204)
+
+
 @app.get("/favicon.ico")
 def get_favicon_ico():
     """Serves the favicon.ico from static/favicon.png for browser defaults."""
