@@ -249,6 +249,7 @@
                     <button id="tab-dash" onclick="switchTab('dash')" class="tab-btn active px-1 py-1">Dashboard</button>
                     <button id="tab-history" onclick="switchTab('history')" class="tab-btn px-1 py-1">History Logs</button>
                     <button id="tab-settings" onclick="switchTab('settings')" class="tab-btn px-1 py-1">API Settings</button>
+                    <button id="tab-docs" onclick="switchTab('docs')" class="tab-btn px-1 py-1">Documentation</button>
                 </div>
 
                 <div class="flex items-center gap-4">
@@ -602,6 +603,193 @@
                 </div>
             </div>
 
+            <!-- ========================================== -->
+            <!-- TAB CONTAINER: 4. DOCUMENTATION VIEW -->
+            <!-- ========================================== -->
+            <div id="view-docs" class="tab-view hidden space-y-6 max-w-4xl mx-auto w-full">
+                <div class="glass-panel p-6 rounded-xl space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-150 pb-4 gap-4">
+                        <div>
+                            <h3 class="tech-font text-xs font-bold text-slate-850 tracking-widest uppercase">SYSTEM DOCUMENTATION</h3>
+                            <p class="text-[9px] text-slate-450 uppercase tracking-widest font-bold mt-1">Platform guides, API integrations & strategy mechanics</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-md text-[8px] font-bold text-blue-650 tracking-wider uppercase">v3.1 Stable</span>
+                            <span class="px-2.5 py-1 bg-slate-50 border border-slate-150 rounded-md text-[8px] font-bold text-slate-500 tracking-wider uppercase">Equity ORB</span>
+                        </div>
+                    </div>
+
+                    <!-- Split layout: Sidebar navigation + Content -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- Sidebar Links -->
+                        <div class="md:col-span-1 flex flex-col gap-1 border-r border-slate-100 pr-0 md:pr-4">
+                            <button onclick="scrollToDocSection('doc-setup')" class="doc-nav-btn text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-blue-650 hover:bg-blue-50/50 rounded-lg transition-all active">Getting Started</button>
+                            <button onclick="scrollToDocSection('doc-alpaca')" class="doc-nav-btn text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-blue-650 hover:bg-blue-50/50 rounded-lg transition-all">Alpaca API Setup</button>
+                            <button onclick="scrollToDocSection('doc-features')" class="doc-nav-btn text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-blue-650 hover:bg-blue-50/50 rounded-lg transition-all">Control Functions</button>
+                            <button onclick="scrollToDocSection('doc-strategy')" class="doc-nav-btn text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-blue-650 hover:bg-blue-50/50 rounded-lg transition-all">ORB Strategy</button>
+                            <button onclick="scrollToDocSection('doc-security')" class="doc-nav-btn text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-blue-650 hover:bg-blue-50/50 rounded-lg transition-all">Security & Data</button>
+                        </div>
+
+                        <!-- Content Area -->
+                        <div class="md:col-span-3 space-y-8 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar scroll-smooth" id="docs-content-container">
+                            
+                            <!-- Section: Getting Started -->
+                            <section id="doc-setup" class="space-y-4">
+                                <h4 class="tech-font text-xs font-bold text-slate-800 tracking-wider flex items-center gap-2">
+                                    <i class="ph ph-rocket-launch text-base text-blue-600"></i>
+                                    1. GETTING STARTED
+                                </h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    Welcome to the ORB Control Deck. Follow this simple 3-step pipeline to initiate automated daily stock breakout trading:
+                                </p>
+                                <div class="grid grid-cols-1 gap-3 text-xs text-slate-600">
+                                    <div class="flex items-start gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-lg">
+                                        <span class="w-5 h-5 bg-blue-105 text-blue-700 font-bold flex items-center justify-center rounded-full text-[10px] flex-shrink-0">1</span>
+                                        <div>
+                                            <p class="font-bold text-slate-800 uppercase tracking-wider text-[9px] mb-1">Authenticate Identity</p>
+                                            <p class="text-slate-550 leading-normal">Sign in using your Google Account via the protected Firebase login screen to establish your profile.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-lg">
+                                        <span class="w-5 h-5 bg-blue-105 text-blue-700 font-bold flex items-center justify-center rounded-full text-[10px] flex-shrink-0">2</span>
+                                        <div>
+                                            <p class="font-bold text-slate-800 uppercase tracking-wider text-[9px] mb-1">Set Credentials & Parameters</p>
+                                            <p class="text-slate-550 leading-normal">Go to the <b>API Settings</b> panel, paste your Alpaca keys, select your parameters (SL, TP, and Trade Limit), and configure your Bot active state.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-lg">
+                                        <span class="w-5 h-5 bg-blue-105 text-blue-700 font-bold flex items-center justify-center rounded-full text-[10px] flex-shrink-0">3</span>
+                                        <div>
+                                            <p class="font-bold text-slate-800 uppercase tracking-wider text-[9px] mb-1">Monitor Control Room</p>
+                                            <p class="text-slate-550 leading-normal">Return to the <b>Dashboard</b> to view live scanning statuses, active positions, and real-time execution logs from the terminal console.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <hr class="border-slate-100">
+
+                            <!-- Section: Alpaca API Setup -->
+                            <section id="doc-alpaca" class="space-y-4">
+                                <h4 class="tech-font text-xs font-bold text-slate-800 tracking-wider flex items-center gap-2">
+                                    <i class="ph ph-key text-base text-blue-600"></i>
+                                    2. OBTAINING ALPACA API KEYS
+                                </h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    Alpaca is the commission-free trading API brokerage that hosts our trading engine execution. To get your keys:
+                                </p>
+                                <ol class="list-decimal pl-5 text-xs text-slate-550 space-y-2.5 leading-relaxed">
+                                    <li>Navigate to <a href="https://app.alpaca.markets/signup" target="_blank" class="text-blue-600 hover:underline font-semibold">Alpaca's Signup Portal</a> and create an account.</li>
+                                    <li>Complete registration. On your main web portal dashboard, you will see a box on the right-hand panel labeled <b>Your API Keys</b>.</li>
+                                    <li>By default, it is recommended to start with <b>Paper Trading</b> (simulated funds). Toggle the environment dropdown from "Live" to <b>"Paper"</b> to generate test credentials.</li>
+                                    <li>Click <b>Generate API Key</b> (or <i>View API Key</i>). This will display:
+                                        <ul class="list-disc pl-5 mt-1.5 space-y-1">
+                                            <li><b>API Key ID</b> (public identifier, e.g., <code class="bg-slate-100 px-1 py-0.5 rounded text-blue-700 font-semibold">PK...</code>)</li>
+                                            <li><b>Secret API Key</b> (private token, visible only once upon generation)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Copy and paste these strings into your <b>API Settings</b> panel inside our platform.</li>
+                                </ol>
+                                <div class="p-3 bg-amber-50/50 border border-amber-150 text-amber-850 rounded-lg text-[10px] leading-relaxed flex gap-2">
+                                    <i class="ph ph-warning-circle text-lg text-amber-600 flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <span class="font-bold uppercase tracking-wider block mb-0.5">IMPORTANT SAFETY REMINDER</span>
+                                        Keep your Secret Key private at all times. Never share your secret keys or upload them to public source code files.
+                                    </div>
+                                </div>
+                            </section>
+
+                            <hr class="border-slate-100">
+
+                            <!-- Section: Control Functions -->
+                            <section id="doc-features" class="space-y-4">
+                                <h4 class="tech-font text-xs font-bold text-slate-800 tracking-wider flex items-center gap-2">
+                                    <i class="ph ph-sliders text-base text-blue-600"></i>
+                                    3. CORE PLATFORM FUNCTIONS
+                                </h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    Here is an overview of the strategy settings and parameters available in your configuration console:
+                                </p>
+                                <div class="space-y-3.5 text-xs">
+                                    <div>
+                                        <span class="font-bold text-slate-850 uppercase tracking-wider text-[10px] block">🛡️ Stop-Loss (SL) % Override</span>
+                                        <span class="text-slate-500 leading-relaxed block mt-0.5">
+                                            The custom percentage below (for Buy orders) or above (for Sell orders) the entry price where the engine will trigger a risk-mitigating stop order. If set to <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">0</code>, the stop-loss defaults to the opposite boundary of the 5-Minute Opening Range (standard ORB breakout).
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-slate-850 uppercase tracking-wider text-[10px] block">🎯 Take-Profit (TP) % Override</span>
+                                        <span class="text-slate-500 leading-relaxed block mt-0.5">
+                                            The custom target percentage where the engine will exit a profitable trade. If set to <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">0</code>, the take-profit target will default to standard ORB strategy target calculations.
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-slate-850 uppercase tracking-wider text-[10px] block">📊 Daily Trade Limit</span>
+                                        <span class="text-slate-500 leading-relaxed block mt-0.5">
+                                            The maximum number of trades the bot is allowed to enter in a single trading day. Once this limit is reached, the bot suspends new entries and focuses on monitoring current active trades.
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-slate-855 uppercase tracking-wider text-[10px] block">🧪 Dry-Run Mode</span>
+                                        <span class="text-slate-500 leading-relaxed block mt-0.5">
+                                            A built-in simulator that mimics breakout triggers using live pricing, logging hypothetical entries, stops, and P&L results to your cloud history ledger without using any actual funds or placing orders with Alpaca. Perfect for testing before trading.
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-slate-855 uppercase tracking-wider text-[10px] block">🔴 EOD Liquidation</span>
+                                        <span class="text-slate-500 leading-relaxed block mt-0.5">
+                                            At <b>15:55:00 EST</b> (5 minutes before NYSE market close), the system triggers an automatic liquidation event that cancels all pending breakout orders and closes all remaining open positions, protecting your capital from overnight holding risk.
+                                        </span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <hr class="border-slate-100">
+
+                            <!-- Section: ORB Strategy -->
+                            <section id="doc-strategy" class="space-y-4">
+                                <h4 class="tech-font text-xs font-bold text-slate-800 tracking-wider flex items-center gap-2">
+                                    <i class="ph ph-chart-line-up text-base text-blue-600"></i>
+                                    4. THE ORB STRATEGY MECHANISM
+                                </h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    The <b>5-Minute Opening Range Breakout (ORB)</b> is a highly popular intraday strategy:
+                                </p>
+                                <ul class="list-disc pl-5 text-xs text-slate-550 space-y-2 leading-relaxed">
+                                    <li><b>Calculation (09:30 AM - 09:35 AM EST)</b>: The engine tracks the stock's highest and lowest price during the first 5 minutes of NYSE trading. This forms the upper boundary (ORB High) and lower boundary (ORB Low).</li>
+                                    <li><b>Trigger Conditions</b>:
+                                        <ul class="list-circle pl-5 mt-1 space-y-1">
+                                            <li><b>Bullish Breakout (Buy)</b>: If the price breaks above the <b>ORB High</b> (after having been inside the range), a long position is initiated.</li>
+                                            <li><b>Bearish Breakout (Sell)</b>: If the price breaks below the <b>ORB Low</b> (after having been inside the range), a short position is initiated.</li>
+                                        </ul>
+                                    </li>
+                                    <li><b>Bracket Protection</b>: Upon entry, the system instantly submits a bracket order to Alpaca consisting of the entry order, an opposing stop-loss order (placed at the opposite range level or custom SL%), and a limit take-profit order.</li>
+                                </ul>
+                            </section>
+
+                            <hr class="border-slate-100">
+
+                            <!-- Section: Security & Data -->
+                            <section id="doc-security" class="space-y-4">
+                                <h4 class="tech-font text-xs font-bold text-slate-800 tracking-wider flex items-center gap-2">
+                                    <i class="ph ph-shield-check text-base text-blue-600"></i>
+                                    5. SECURITY & DATA PRIVACY
+                                </h4>
+                                <p class="text-xs text-slate-500 leading-relaxed">
+                                    We prioritize data privacy and user safety at every level of the platform:
+                                </p>
+                                <ul class="list-disc pl-5 text-xs text-slate-550 space-y-2.5 leading-relaxed">
+                                    <li><b>API Key Encryption</b>: Your Alpaca API Key and Secret are never stored as plain text. They are encrypted at rest using server-side <b>AES-256 (Fernet)</b> symmetric encryption before being written to Firestore.</li>
+                                    <li><b>No Client Access to Firestore</b>: Access rules block any direct web reads/writes. The Firebase Admin SDK operates on the server-side, meaning only your authenticated user thread can access your secure profile information.</li>
+                                    <li><b>Account Deletion Option</b>: Clicking "Delete Account" in Settings permanently purges all profile tokens, encrypted keys, settings, and historical trade logs from the Firebase database.</li>
+                                </ul>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer information -->
             <!-- Footer information -->
             <footer class="flex flex-col md:flex-row justify-between items-center text-slate-400 text-[8px] uppercase tracking-[0.2em] font-bold pt-6 border-t border-slate-200/60 gap-3">
                 <span>STARK SUITE // SECURE EQUITY AGENT v3.1</span>
@@ -956,11 +1144,34 @@
             } else if (tab === 'settings') {
                 document.getElementById('tab-settings').classList.add('active');
                 targetEl = document.getElementById('view-settings');
+            } else if (tab === 'docs') {
+                document.getElementById('tab-docs').classList.add('active');
+                targetEl = document.getElementById('view-docs');
             }
 
             if (targetEl) {
                 targetEl.classList.remove('hidden');
                 gsap.fromTo(targetEl, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" });
+            }
+        }
+
+        // Smooth scroll to specific documentation section
+        function scrollToDocSection(sectionId) {
+            document.querySelectorAll('.doc-nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-650', 'bg-blue-50/50', 'active');
+                btn.classList.add('text-slate-600');
+            });
+            
+            const activeBtn = Array.from(document.querySelectorAll('.doc-nav-btn')).find(btn => btn.getAttribute('onclick').includes(sectionId));
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600');
+                activeBtn.classList.add('text-blue-650', 'bg-blue-50/50', 'active');
+            }
+            
+            const element = document.getElementById(sectionId);
+            const container = document.getElementById('docs-content-container');
+            if (element && container) {
+                container.scrollTop = element.offsetTop - container.offsetTop;
             }
         }
 
