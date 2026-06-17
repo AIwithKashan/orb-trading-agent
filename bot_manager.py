@@ -287,12 +287,11 @@ def run_bot_loop(bot: UserBot) -> None:
                 for s, p in prices.items():
                     bot.current_prices[s] = p
                 
-                # Trigger-zone breakout evaluation
+                # Collect all active breakout candidates in this scan
+                candidates = []
                 for symbol in US_STOCKS:
                     if symbol in bot.symbols_traded_today:
                         continue
-                    if bot.daily_trade_count >= bot.trade_limit:
-                        break
                     
                     tracker = bot.trackers[symbol]
                     price = bot.current_prices.get(symbol, 0.0)
@@ -311,86 +310,132 @@ def run_bot_loop(bot: UserBot) -> None:
                     sl_pct = bot.settings.get("stop_loss_pct", 0.0)
                     tp_pct = bot.settings.get("take_profit_pct", 0.0)
                     
-                    if tracker.was_inside_range:
-                        if price >= tracker.orb_high:
-                            side = "Long"
-                            if sl_pct > 0:
-                                sl = price * (1 - sl_pct / 100.0)
-                            else:
-                                sl = tracker.orb_mid
-                            
-                            if tp_pct > 0:
-                                tp = price * (1 + tp_pct / 100.0)
-                            else:
-                                risk = price - sl
-                                tp = price + (risk * RISK_REWARD_RATIO)
-                            triggered = True
-                            tracker.was_inside_range = False
-                        elif price <= tracker.orb_low:
-                            side = "Short"
-                            if sl_pct > 0:
-                                sl = price * (1 + sl_pct / 100.0)
-                            else:
-                                sl = tracker.orb_mid
-                            
-                            if tp_pct > 0:
-                                tp = price * (1 - tp_pct / 100.0)
-                            else:
-                                risk = sl - price
-                                tp = price - (risk * RISK_REWARD_RATIO)
-                            triggered = True
-                            tracker.was_inside_range = False
-                    elif not is_inside:
-                        continue
+                    # Robust breakout check: We check if the price is currently beyond the range
+                    # regardless of previous inside_range observation, to avoid missing fast breakouts.
+                    if price >= tracker.orb_high:
+                        side = "Long"
+                        if sl_pct > 0:
+                            sl = price * (1 - sl_pct / 100.0)
+                        else:
+                            sl = tracker.orb_mid
+                        
+                        if tp_pct > 0:
+                            tp = price * (1 + tp_pct / 100.0)
+                        else:
+                            risk = price - sl
+                            tp = price + (risk * RISK_REWARD_RATIO)
+                        triggered = True
+                    elif price <= tracker.orb_low:
+                        side = "Short"
+                        if sl_pct > 0:
+                            sl = price * (1 + sl_pct / 100.0)
+                        else:
+                            sl = tracker.orb_mid
+                        
+                        if tp_pct > 0:
+                            tp = price * (1 - tp_pct / 100.0)
+                        else:
+                            risk = sl - price
+                            tp = price - (risk * RISK_REWARD_RATIO)
+                        triggered = True
                     
                     if triggered and side:
-                        try:
-                            equity = bot.account_equity if bot.account_equity > 0 else 500.0
-                            qty = tracker.calculate_position_size(price, sl, equity=equity)
-                            qty = round(qty, 4)
+                        # Compute Breakout Quality Score
+                        # 1. Opening range width (narrower range = tight stop loss = higher ratio)
+                        range_width_pct = (tracker.orb_high - tracker.orb_low) / (tracker.orb_mid or 1.0)
+                        
+                        # 2. Breakout distance (we favor a sweet spot to avoid chasing overextended moves)
+                        if side == "Long":
+                            distance_pct = (price - tracker.orb_high) / tracker.orb_high
+                        else:
+                            distance_pct = (tracker.orb_low - price) / tracker.orb_low
+                        
+                        if 0.001 <= distance_pct <= 0.015:
+                            distance_factor = 1.0     # Sweet spot (0.1% to 1.5% breakout)
+                        elif distance_pct < 0.001:
+                            distance_factor = 0.5     # Very close to boundary
+                        elif distance_pct <= 0.03:
+                            distance_factor = 0.2     # Getting far / chased
+                        else:
+                            distance_factor = 0.05    # Heavily overextended (>3%)
                             
-                            bot.add_log(
-                                f"[TRADE] {side} {symbol} @ ${price:.2f} | "
-                                f"SL: ${sl:.2f} | TP: ${tp:.2f} | Qty: {qty}"
+                        quality_score = (1.0 / (range_width_pct + 0.005)) * distance_factor
+                        
+                        candidates.append({
+                            "symbol": symbol,
+                            "side": side,
+                            "price": price,
+                            "sl": sl,
+                            "tp": tp,
+                            "tracker": tracker,
+                            "quality_score": quality_score,
+                            "range_width_pct": range_width_pct,
+                            "distance_pct": distance_pct
+                        })
+                
+                # Sort candidates by quality_score descending (best setups first)
+                candidates.sort(key=lambda x: x["quality_score"], reverse=True)
+                
+                # Execute trades on the highest-scoring setups up to the trade limit
+                for cand in candidates:
+                    if bot.daily_trade_count >= bot.trade_limit:
+                        break
+                    
+                    symbol = cand["symbol"]
+                    side = cand["side"]
+                    price = cand["price"]
+                    sl = cand["sl"]
+                    tp = cand["tp"]
+                    tracker = cand["tracker"]
+                    
+                    try:
+                        equity = bot.account_equity if bot.account_equity > 0 else 500.0
+                        qty = tracker.calculate_position_size(price, sl, equity=equity)
+                        qty = round(qty, 4)
+                        
+                        bot.add_log(
+                            f"[TRADE] {side} {symbol} @ ${price:.2f} | "
+                            f"SL: ${sl:.2f} | TP: ${tp:.2f} | Qty: {qty} | "
+                            f"Score: {cand['quality_score']:.2f} (Width: {cand['range_width_pct']*100:.2f}%, Dist: {cand['distance_pct']*100:.2f}%)"
+                        )
+                        
+                        order_placed = False
+                        if not bot.dry_run and bot.broker:
+                            order = bot.broker.submit_bracket_order(
+                                symbol=symbol, qty=qty,
+                                side="buy" if side == "Long" else "sell",
+                                take_profit_price=tp, stop_loss_price=sl
                             )
+                            order_placed = order is not None
+                        else:
+                            order_placed = True
+                            bot.add_log(f"[DRY-RUN] Simulated {side} for {symbol}.")
+                        
+                        if order_placed:
+                            trade_record = {
+                                "symbol": symbol,
+                                "side": side,
+                                "qty": qty,
+                                "entry_price": price,
+                                "stop_loss": sl,
+                                "take_profit": tp,
+                                "orb_high": tracker.orb_high,
+                                "orb_low": tracker.orb_low,
+                                "order_type": "Bracket (Market)",
+                                "status": "FILLED",
+                                "timestamp": datetime.now(pytz.utc).isoformat(),
+                                "pnl": None
+                            }
+                            bot.active_trades.append(trade_record)
                             
-                            order_placed = False
-                            if not bot.dry_run and bot.broker:
-                                order = bot.broker.submit_bracket_order(
-                                    symbol=symbol, qty=qty,
-                                    side="buy" if side == "Long" else "sell",
-                                    take_profit_price=tp, stop_loss_price=sl
-                                )
-                                order_placed = order is not None
-                            else:
-                                order_placed = True
-                                bot.add_log(f"[DRY-RUN] Simulated {side} for {symbol}.")
+                            # Log to Firestore
+                            firebase_db.log_trade(bot.uid, trade_record)
                             
-                            if order_placed:
-                                trade_record = {
-                                    "symbol": symbol,
-                                    "side": side,
-                                    "qty": qty,
-                                    "entry_price": price,
-                                    "stop_loss": sl,
-                                    "take_profit": tp,
-                                    "orb_high": tracker.orb_high,
-                                    "orb_low": tracker.orb_low,
-                                    "order_type": "Bracket (Market)",
-                                    "status": "FILLED",
-                                    "timestamp": datetime.now(pytz.utc).isoformat(),
-                                    "pnl": None  # Filled when closed
-                                }
-                                bot.active_trades.append(trade_record)
-                                
-                                # Log to Firestore
-                                firebase_db.log_trade(bot.uid, trade_record)
-                                
-                                bot.symbols_traded_today.add(symbol)
-                                bot.daily_trade_count += 1
-                                bot.add_log(f"[TRADE] Trades today: {bot.daily_trade_count}/{bot.trade_limit}")
-                        except Exception as e:
-                            bot.add_log(f"[ERROR] Trade execution failed for {symbol}: {e}")
+                            bot.symbols_traded_today.add(symbol)
+                            bot.daily_trade_count += 1
+                            bot.add_log(f"[TRADE] Trades today: {bot.daily_trade_count}/{bot.trade_limit}")
+                    except Exception as e:
+                        bot.add_log(f"[ERROR] Trade execution failed for {symbol}: {e}")
             
             if not _interruptible_sleep(bot, LOOP_INTERVAL):
                 break
