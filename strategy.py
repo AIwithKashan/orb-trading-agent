@@ -1,6 +1,6 @@
 import logging
 import pytz
-from typing import Any
+from typing import Any, Optional
 from datetime import datetime
 
 # Setup logging
