@@ -384,7 +384,7 @@
                             <i class="ph ph-clock-countdown text-xl text-indigo-500"></i>
                         </div>
                         <div class="mt-2">
-                            <h3 class="tech-font text-base font-bold text-slate-800">09:35 - 12:30 EST</h3>
+                            <h3 class="tech-font text-base font-bold text-slate-800">09:45 - 12:30 EST</h3>
                             <p class="text-[9px] text-indigo-500 mt-1 uppercase font-semibold">Stocks Regular Open Hour</p>
                         </div>
                     </div>
@@ -611,8 +611,8 @@
                             <p class="text-[9px] text-slate-400">The bot thread automatically suspends trading after taking this many positions in a single session.</p>
                         </div>
 
-                        <!-- Customizable SL / TP percents -->
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- Customizable SL / TP / Risk settings -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="flex flex-col gap-1.5">
                                 <label for="input-stop-loss-pct" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Custom Stop Loss % (0 to disable)</label>
                                 <input id="input-stop-loss-pct" type="number" step="0.1" min="0" max="10" placeholder="e.g. 1.5" class="w-full px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg text-xs font-semibold">
@@ -620,6 +620,10 @@
                             <div class="flex flex-col gap-1.5">
                                 <label for="input-take-profit-pct" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Custom Take Profit % (0 to disable)</label>
                                 <input id="input-take-profit-pct" type="number" step="0.1" min="0" max="20" placeholder="e.g. 3.0" class="w-full px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg text-xs font-semibold">
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label for="input-risk-dollars" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Max Risk per Trade ($)</label>
+                                <input id="input-risk-dollars" type="number" step="1" min="1" max="1000" placeholder="e.g. 10" class="w-full px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg text-xs font-semibold">
                             </div>
                         </div>
 
@@ -815,10 +819,10 @@
                                     4. THE ORB STRATEGY MECHANISM
                                 </h4>
                                 <p class="text-xs text-slate-500 leading-relaxed">
-                                    The <b>5-Minute Opening Range Breakout (ORB)</b> is a highly popular intraday strategy:
+                                    The <b>15-Minute Opening Range Breakout (ORB)</b> is a highly popular intraday strategy:
                                 </p>
                                 <ul class="list-disc pl-5 text-xs text-slate-550 space-y-2 leading-relaxed">
-                                    <li><b>Calculation (09:30 AM - 09:35 AM EST)</b>: The engine tracks the stock's highest and lowest price during the first 5 minutes of NYSE trading. This forms the upper boundary (ORB High) and lower boundary (ORB Low).</li>
+                                    <li><b>Calculation (09:30 AM - 09:45 AM EST)</b>: The engine tracks the stock's highest and lowest price during the first 15 minutes of NYSE trading. This forms the upper boundary (ORB High) and lower boundary (ORB Low).</li>
                                     <li><b>Trigger Conditions</b>:
                                         <ul class="list-circle pl-5 mt-1 space-y-1">
                                             <li><b>Bullish Breakout (Buy)</b>: If the price breaks above the <b>ORB High</b> (after having been inside the range), a long position is initiated.</li>
@@ -1186,6 +1190,7 @@
                             document.getElementById('switch-dry-run').checked = currentUser.dry_run;
                             document.getElementById('input-stop-loss-pct').value = currentUser.stop_loss_pct || 0;
                             document.getElementById('input-take-profit-pct').value = currentUser.take_profit_pct || 0;
+                            document.getElementById('input-risk-dollars').value = currentUser.risk_dollars || 10;
                             
                             // Load dashboard details
                             document.getElementById('user-avatar').src = currentUser.profile_pic || user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
@@ -1764,8 +1769,9 @@
             const dry_run = document.getElementById('switch-dry-run').checked;
             const stop_loss_pct = parseFloat(document.getElementById('input-stop-loss-pct').value.trim()) || 0;
             const take_profit_pct = parseFloat(document.getElementById('input-take-profit-pct').value.trim()) || 0;
+            const risk_dollars = parseFloat(document.getElementById('input-risk-dollars').value.trim()) || 10;
 
-            const payload = { trade_limit, bot_active, dry_run, stop_loss_pct, take_profit_pct };
+            const payload = { trade_limit, bot_active, dry_run, stop_loss_pct, take_profit_pct, risk_dollars };
             if (api_key) payload.alpaca_api_key = api_key;
             if (secret_key) payload.alpaca_secret_key = secret_key;
 

@@ -52,7 +52,8 @@ async def startup_event():
                         "trade_limit": user_data.get("trade_limit", 3),
                         "dry_run": user_data.get("dry_run", True),
                         "stop_loss_pct": user_data.get("stop_loss_pct", 0.0),
-                        "take_profit_pct": user_data.get("take_profit_pct", 0.0)
+                        "take_profit_pct": user_data.get("take_profit_pct", 0.0),
+                        "risk_dollars": user_data.get("risk_dollars", 10.0)
                     }
                     bot_manager.start_bot(uid, keys, settings)
                     active_count += 1
@@ -198,7 +199,8 @@ async def handle_login(payload: Dict[str, str]) -> Dict[str, Any]:
                     "trade_limit": user_data.get("trade_limit", 3),
                     "dry_run": user_data.get("dry_run", False),
                     "stop_loss_pct": user_data.get("stop_loss_pct", 0.0),
-                    "take_profit_pct": user_data.get("take_profit_pct", 0.0)
+                    "take_profit_pct": user_data.get("take_profit_pct", 0.0),
+                    "risk_dollars": user_data.get("risk_dollars", 10.0)
                 }
                 bot_manager.start_bot(uid, keys, settings)
                 
@@ -218,6 +220,7 @@ async def handle_login(payload: Dict[str, str]) -> Dict[str, Any]:
             "profile_pic": user_data.get("profile_pic", ""),
             "stop_loss_pct": user_data.get("stop_loss_pct", 0.0),
             "take_profit_pct": user_data.get("take_profit_pct", 0.0),
+            "risk_dollars": user_data.get("risk_dollars", 10.0),
             "has_keys": bool(user_data.get("alpaca_api_key"))
         }
     }
@@ -253,6 +256,7 @@ async def get_status(user: Dict[str, Any] = Depends(get_current_user)) -> Dict[s
     status["profile_pic"] = user_info.get("profile_pic", "")
     status["stop_loss_pct"] = user_info.get("stop_loss_pct", 0.0)
     status["take_profit_pct"] = user_info.get("take_profit_pct", 0.0)
+    status["risk_dollars"] = user_info.get("risk_dollars", 10.0)
     status["display_name"] = user_info.get("display_name", user_info.get("email", "User"))
     status["has_keys"] = bool(user_info.get("alpaca_api_key"))
     
@@ -298,6 +302,8 @@ async def update_settings(payload: Dict[str, Any], user: Dict[str, Any] = Depend
         settings["stop_loss_pct"] = float(payload["stop_loss_pct"])
     if "take_profit_pct" in payload:
         settings["take_profit_pct"] = float(payload["take_profit_pct"])
+    if "risk_dollars" in payload:
+        settings["risk_dollars"] = float(payload["risk_dollars"])
         
     success = firebase_db.save_user_settings(uid, settings)
     if not success:
@@ -314,7 +320,8 @@ async def update_settings(payload: Dict[str, Any], user: Dict[str, Any] = Depend
                 "trade_limit": user_info.get("trade_limit", 3),
                 "dry_run": user_info.get("dry_run", False),
                 "stop_loss_pct": user_info.get("stop_loss_pct", 0.0),
-                "take_profit_pct": user_info.get("take_profit_pct", 0.0)
+                "take_profit_pct": user_info.get("take_profit_pct", 0.0),
+                "risk_dollars": user_info.get("risk_dollars", 10.0)
             })
         else:
             # Missing keys, force bot inactive

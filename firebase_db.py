@@ -64,6 +64,7 @@ def create_or_update_user(uid: str, email: str, display_name: str = "") -> Dict[
                 "profile_pic": "",
                 "stop_loss_pct": 0.0,
                 "take_profit_pct": 0.0,
+                "risk_dollars": 10.0,
                 "created_at": now,
                 "last_login": now
             }
@@ -112,6 +113,8 @@ def save_user_settings(uid: str, settings: Dict[str, Any]) -> bool:
             update_data["stop_loss_pct"] = float(settings["stop_loss_pct"])
         if "take_profit_pct" in settings:
             update_data["take_profit_pct"] = float(settings["take_profit_pct"])
+        if "risk_dollars" in settings:
+            update_data["risk_dollars"] = float(settings["risk_dollars"])
         
         if update_data:
             user_ref.update(update_data)

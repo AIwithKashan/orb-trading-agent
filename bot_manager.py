@@ -26,7 +26,7 @@ US_STOCKS = [
 # Market Timing (US/Eastern)
 TIMEZONE_EST = pytz.timezone('US/Eastern')
 ORB_WINDOW_START = dt_time(9, 30)
-ORB_WINDOW_END = dt_time(9, 35)
+ORB_WINDOW_END = dt_time(9, 45)
 TRADING_WINDOW_END = dt_time(12, 30)
 LIQUIDATION_TIME = dt_time(15, 55)
 MARKET_CLOSE_TIME = dt_time(16, 0)
@@ -194,7 +194,7 @@ def run_bot_loop(bot: UserBot) -> None:
                 secs = (end_dt - now).total_seconds()
                 if secs > 0:
                     bot.activity = f"Opening range forming... {int(secs)}s remaining."
-                    bot.add_log(f"[WAIT] ORB range forming. {int(secs)}s until 9:35 AM EST.")
+                    bot.add_log(f"[WAIT] ORB range forming. {int(secs)}s until 9:45 AM EST.")
                     bot.orb_levels_calculated = False
                     if not _interruptible_sleep(bot, secs):
                         break
@@ -390,7 +390,8 @@ def run_bot_loop(bot: UserBot) -> None:
                     
                     try:
                         equity = bot.account_equity if bot.account_equity > 0 else 500.0
-                        qty = tracker.calculate_position_size(price, sl, equity=equity)
+                        risk_dollars = bot.settings.get("risk_dollars", 10.0)
+                        qty = tracker.calculate_position_size(price, sl, equity=equity, risk_dollars=risk_dollars)
                         qty = round(qty, 4)
                         
                         bot.add_log(
