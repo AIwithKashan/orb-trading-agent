@@ -1826,9 +1826,10 @@
                 if (data.trades && data.trades.length > 0) {
                     data.trades.forEach(trade => {
                         const sideColor = trade.side === "Long" ? "text-emerald-605 font-bold" : "text-red-605 font-bold";
-                        const tradePnl = trade.pnl !== null ? trade.pnl : 0.0;
-                        const pnlColor = tradePnl >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold';
-                        const sign = tradePnl >= 0 ? '+' : '';
+                        const isClosed = trade.pnl !== null && trade.pnl !== undefined;
+                        const exitPriceText = isClosed ? `$${trade.exit_price.toFixed(2)}` : `<span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-bold text-[8px] tracking-wider uppercase">Open</span>`;
+                        const pnlText = isClosed ? `${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}` : '—';
+                        const pnlColor = isClosed ? (trade.pnl >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold') : 'text-slate-400 font-medium';
                         const formattedDate = new Date(trade.timestamp).toLocaleString();
 
                         tbody.insertAdjacentHTML('beforeend', `
@@ -1838,9 +1839,9 @@
                                 <td class="py-2.5 ${sideColor} uppercase">${trade.side}</td>
                                 <td class="py-2.5">${trade.qty}</td>
                                 <td class="py-2.5">$${trade.entry_price.toFixed(2)}</td>
-                                <td class="py-2.5">$${(trade.exit_price || trade.entry_price).toFixed(2)}</td>
+                                <td class="py-2.5">${exitPriceText}</td>
                                 <td class="py-2.5 text-slate-450">$${(trade.orb_low || 0).toFixed(2)} - $${(trade.orb_high || 0).toFixed(2)}</td>
-                                <td class="py-2.5 text-right ${pnlColor}">${sign}$${tradePnl.toFixed(2)}</td>
+                                <td class="py-2.5 text-right ${pnlColor}">${pnlText}</td>
                             </tr>
                         `);
                     });

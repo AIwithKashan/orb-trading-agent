@@ -50,9 +50,22 @@ class UserBot:
         self.thread: Optional[threading.Thread] = None
         self.activity = "Initializing..."
         self.current_prices: Dict[str, float] = {}
-        self.active_trades: List[Dict[str, Any]] = []
+        # Load active trades and daily session state from database for recovery
+        self.active_trades = []
+        self.symbols_traded_today = set()
         self.daily_trade_count = 0
-        self.symbols_traded_today: Set[str] = set()
+        
+        try:
+            today_trades = firebase_db.get_today_trades(uid)
+            for t in today_trades:
+                if t.get("pnl") is None:
+                    t["doc_id"] = t.get("id")
+                    self.active_trades.append(t)
+                self.symbols_traded_today.add(t["symbol"])
+            self.daily_trade_count = len(today_trades)
+        except Exception as e:
+            logger.error(f"Failed to recover user bot state from Firestore: {e}")
+            
         self.orb_levels_calculated = False
         self.liquidated_today = False
         self.account_equity = 0.0
@@ -250,6 +263,31 @@ def run_bot_loop(bot: UserBot) -> None:
                 bot.add_log("[LIQUIDATE] End-of-day liquidation triggered.")
                 if bot.broker and not bot.dry_run:
                     bot.broker.cancel_all_orders_and_close_positions()
+                elif bot.dry_run:
+                    # Close all dry-run active trades at the current market price
+                    for trade in list(bot.active_trades):
+                        symbol = trade["symbol"]
+                        doc_id = trade.get("doc_id")
+                        exit_price = bot.current_prices.get(symbol, trade["entry_price"])
+                        entry = trade["entry_price"]
+                        qty = trade["qty"]
+                        
+                        if trade["side"] == "Long":
+                            pnl = round((exit_price - entry) * qty, 2)
+                        else:
+                            pnl = round((entry - exit_price) * qty, 2)
+                        
+                        exit_time = datetime.now(pytz.utc).isoformat()
+                        bot.add_log(f"[LIQUIDATE] Dry-run trade closed for {symbol} @ ${exit_price:.2f} (PnL: ${pnl:+.2f})")
+                        
+                        if doc_id:
+                            firebase_db.update_trade(bot.uid, doc_id, {
+                                "exit_price": exit_price,
+                                "exit_time": exit_time,
+                                "pnl": pnl,
+                                "status": "CLOSED"
+                            })
+                    bot.active_trades.clear()
                 bot.liquidated_today = True
                 if not _interruptible_sleep(bot, 30):
                     break
@@ -257,12 +295,6 @@ def run_bot_loop(bot: UserBot) -> None:
             
             # Active trading window
             if ORB_WINDOW_END <= current_time < TRADING_WINDOW_END:
-                if bot.daily_trade_count >= bot.trade_limit:
-                    bot.activity = f"Trade limit ({bot.trade_limit}) reached. Monitoring."
-                    if not _interruptible_sleep(bot, LOOP_INTERVAL):
-                        break
-                    continue
-                
                 scan_time = now.strftime('%H:%M:%S')
                 bot.activity = f"Scanning 50 stocks... (Last: {scan_time} EST)"
                 
@@ -286,6 +318,112 @@ def run_bot_loop(bot: UserBot) -> None:
                 
                 for s, p in prices.items():
                     bot.current_prices[s] = p
+                
+                # -------------------------------------------------------------
+                # Monitor and Update Open Positions (Active Trades)
+                # -------------------------------------------------------------
+                if bot.active_trades:
+                    open_positions_on_alpaca = set()
+                    if not bot.dry_run and bot.broker:
+                        try:
+                            alp_positions = bot.broker.api.list_positions()
+                            open_positions_on_alpaca = {pos.symbol for pos in alp_positions}
+                        except Exception as e:
+                            bot.add_log(f"[ERROR] Failed to fetch open positions from Alpaca: {e}")
+                    
+                    trades_to_keep = []
+                    for trade in bot.active_trades:
+                        symbol = trade["symbol"]
+                        doc_id = trade.get("doc_id")
+                        
+                        closed = False
+                        exit_price = 0.0
+                        exit_time = None
+                        pnl = 0.0
+                        close_reason = ""
+                        
+                        if bot.dry_run or not bot.broker:
+                            price = bot.current_prices.get(symbol, 0.0)
+                            if price > 0:
+                                sl = trade["stop_loss"]
+                                tp = trade["take_profit"]
+                                entry = trade["entry_price"]
+                                qty = trade["qty"]
+                                
+                                if trade["side"] == "Long":
+                                    if price <= sl:
+                                        closed = True
+                                        exit_price = sl
+                                        close_reason = "Stop Loss Hit"
+                                    elif price >= tp:
+                                        closed = True
+                                        exit_price = tp
+                                        close_reason = "Take Profit Hit"
+                                else:  # Short
+                                    if price >= sl:
+                                        closed = True
+                                        exit_price = sl
+                                        close_reason = "Stop Loss Hit"
+                                    elif price <= tp:
+                                        closed = True
+                                        exit_price = tp
+                                        close_reason = "Take Profit Hit"
+                                
+                                if closed:
+                                    if trade["side"] == "Long":
+                                        pnl = round((exit_price - entry) * qty, 2)
+                                    else:
+                                        pnl = round((entry - exit_price) * qty, 2)
+                                    exit_time = datetime.now(pytz.utc).isoformat()
+                        else:
+                            if symbol not in open_positions_on_alpaca:
+                                closed = True
+                                close_reason = "Filled by Broker"
+                                
+                                try:
+                                    closed_orders = bot.broker.api.list_orders(
+                                        status='closed', limit=5, symbols=[symbol]
+                                    )
+                                    fill_price = None
+                                    fill_time = None
+                                    for o in closed_orders:
+                                        if o.filled_at and o.filled_avg_price:
+                                            fill_price = float(o.filled_avg_price)
+                                            fill_time = o.filled_at
+                                            break
+                                    exit_price = fill_price if fill_price else bot.current_prices.get(symbol, trade["entry_price"])
+                                    exit_time = fill_time if fill_time else datetime.now(pytz.utc).isoformat()
+                                except Exception as e:
+                                    bot.add_log(f"[ERROR] Failed to query closed orders for {symbol}: {e}")
+                                    exit_price = bot.current_prices.get(symbol, trade["entry_price"])
+                                    exit_time = datetime.now(pytz.utc).isoformat()
+                                
+                                entry = trade["entry_price"]
+                                qty = trade["qty"]
+                                if trade["side"] == "Long":
+                                    pnl = round((exit_price - entry) * qty, 2)
+                                else:
+                                    pnl = round((entry - exit_price) * qty, 2)
+                        
+                        if closed:
+                            bot.add_log(f"[CLOSE] {trade['side']} position on {symbol} closed via {close_reason} @ ${exit_price:.2f}. PnL: ${pnl:+.2f}")
+                            if doc_id:
+                                firebase_db.update_trade(bot.uid, doc_id, {
+                                    "exit_price": exit_price,
+                                    "exit_time": exit_time,
+                                    "pnl": pnl,
+                                    "status": "CLOSED"
+                                })
+                        else:
+                            trades_to_keep.append(trade)
+                    bot.active_trades = trades_to_keep
+                
+                # Check Daily Trade Limit (skip scanning new breakouts if reached, but still monitor open trades)
+                if bot.daily_trade_count >= bot.trade_limit:
+                    bot.activity = f"Trade limit ({bot.trade_limit}) reached. Monitoring open trades."
+                    if not _interruptible_sleep(bot, LOOP_INTERVAL):
+                        break
+                    continue
                 
                 # Collect all active breakout candidates in this scan
                 candidates = []
@@ -427,10 +565,10 @@ def run_bot_loop(bot: UserBot) -> None:
                                 "timestamp": datetime.now(pytz.utc).isoformat(),
                                 "pnl": None
                             }
+                            # Log to Firestore and store doc ID
+                            doc_id = firebase_db.log_trade(bot.uid, trade_record)
+                            trade_record["doc_id"] = doc_id
                             bot.active_trades.append(trade_record)
-                            
-                            # Log to Firestore
-                            firebase_db.log_trade(bot.uid, trade_record)
                             
                             bot.symbols_traded_today.add(symbol)
                             bot.daily_trade_count += 1
