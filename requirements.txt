@@ -5,3 +5,4 @@ uvicorn
 firebase-admin
 cryptography
 pytz
+yfinance

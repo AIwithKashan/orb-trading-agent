@@ -1,7 +1,7 @@
 import time
 import logging
 import threading
-from datetime import datetime, time as dt_time
+from datetime import datetime, time as dt_time, timedelta
 from typing import Dict, Any, Optional, Set, List
 import pytz
 
@@ -228,41 +228,66 @@ def run_bot_loop(bot: UserBot) -> None:
                 bot.activity = "Calculating ORB levels for 50 stocks..."
                 bot.add_log("[CALC] Computing opening range breakout levels...")
                 
+                # Try fetching consolidated data from Yahoo Finance for all stocks
+                yfinance_df = None
+                try:
+                    import yfinance as yf
+                    bot.add_log("[CALC] Querying consolidated data from Yahoo Finance...")
+                    today_str = today.strftime("%Y-%m-%d")
+                    tomorrow_str = (today + timedelta(days=1)).strftime("%Y-%m-%d")
+                    yfinance_df = yf.download(US_STOCKS, start=today_str, end=tomorrow_str, interval="5m", group_by="ticker", progress=False)
+                except Exception as e:
+                    bot.add_log(f"[WARNING] Yahoo Finance query failed, will fall back to Alpaca/Mock: {e}")
+                
                 start_dt = TIMEZONE_EST.localize(datetime.combine(today, ORB_WINDOW_START))
                 end_dt = TIMEZONE_EST.localize(datetime.combine(today, ORB_WINDOW_END))
                 
                 for symbol in US_STOCKS:
                     tracker = bot.trackers[symbol]
-                    try:
-                        if bot.broker and not bot.dry_run:
-                            try:
-                                bars = bot.broker.api.get_bars(
-                                    symbol=symbol, timeframe="5Min",
-                                    start=start_dt.isoformat(), end=end_dt.isoformat(),
-                                    feed="sip"
-                                )
-                            except Exception as e:
-                                if "sip" in str(e).lower():
+                    calculated_via_yf = False
+                    
+                    if yfinance_df is not None and not yfinance_df.empty:
+                        try:
+                            if symbol in yfinance_df.columns.levels[0]:
+                                ticker_df = yfinance_df[symbol].dropna()
+                                if not ticker_df.empty:
+                                    tracker.calculate_orb_levels(ticker_df)
+                                    calculated_via_yf = True
+                        except Exception as e:
+                            # Log and fall back
+                            pass
+                            
+                    if not calculated_via_yf:
+                        try:
+                            if bot.broker and not bot.dry_run:
+                                try:
                                     bars = bot.broker.api.get_bars(
                                         symbol=symbol, timeframe="5Min",
                                         start=start_dt.isoformat(), end=end_dt.isoformat(),
-                                        feed="iex"
+                                        feed="sip"
                                     )
-                                else:
-                                    raise e
-                            tracker.calculate_orb_levels(bars)
-                        else:
-                            # Dry-run mock levels
-                            import random
-                            base = {"AAPL": 180, "MSFT": 420, "GOOGL": 170, "AMZN": 185, 
-                                    "NVDA": 850, "TSLA": 175, "META": 500, "NFLX": 600,
-                                    "AMD": 160, "INTC": 30}.get(symbol, 150 + random.uniform(-50, 50))
-                            tracker.orb_high = base * 1.005
-                            tracker.orb_low = base * 0.995
-                            tracker.orb_mid = base
-                            tracker.was_inside_range = False
-                    except Exception as e:
-                        bot.add_log(f"[ERROR] ORB calc failed for {symbol}: {e}")
+                                except Exception as e:
+                                    if "sip" in str(e).lower():
+                                        bars = bot.broker.api.get_bars(
+                                            symbol=symbol, timeframe="5Min",
+                                            start=start_dt.isoformat(), end=end_dt.isoformat(),
+                                            feed="iex"
+                                        )
+                                    else:
+                                        raise e
+                                tracker.calculate_orb_levels(bars)
+                            else:
+                                # Dry-run mock levels
+                                import random
+                                base = {"AAPL": 180, "MSFT": 420, "GOOGL": 170, "AMZN": 185, 
+                                        "NVDA": 850, "TSLA": 175, "META": 500, "NFLX": 600,
+                                        "AMD": 160, "INTC": 30}.get(symbol, 150 + random.uniform(-50, 50))
+                                tracker.orb_high = base * 1.005
+                                tracker.orb_low = base * 0.995
+                                tracker.orb_mid = base
+                                tracker.was_inside_range = False
+                        except Exception as e:
+                            bot.add_log(f"[ERROR] ORB calc fallback failed for {symbol}: {e}")
                 
                 bot.orb_levels_calculated = True
                 bot.add_log("[CALC] ORB levels calculated for all stocks.")
