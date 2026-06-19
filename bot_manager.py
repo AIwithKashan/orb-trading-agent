@@ -88,6 +88,11 @@ class UserBot:
         # Fetch equity
         if self.broker:
             self.account_equity = self.broker.get_account_equity()
+            
+        # Calculate daily trade limit dynamically based on 1% total account risk
+        equity = self.account_equity if self.account_equity > 0 else 4000.0
+        risk_dollars = settings.get("risk_dollars", 10.0)
+        self.trade_limit = max(1, min(20, int((0.01 * equity) / risk_dollars)))
     
     def add_log(self, msg: str):
         """Thread-safe log appender."""
@@ -174,9 +179,13 @@ def run_bot_loop(bot: UserBot) -> None:
                 bot.symbols_traded_today.clear()
                 bot.active_trades.clear()
                 last_date = today
-                # Refresh equity
+                # Refresh equity and recalculate daily trade limit
                 if bot.broker:
                     bot.account_equity = bot.broker.get_account_equity()
+                equity = bot.account_equity if bot.account_equity > 0 else 4000.0
+                risk_dollars = bot.settings.get("risk_dollars", 10.0)
+                bot.trade_limit = max(1, min(20, int((0.01 * equity) / risk_dollars)))
+                bot.add_log(f"[SYSTEM] Daily trade limit dynamically set to {bot.trade_limit} based on equity ${equity:,.2f}.")
             
             # Weekend
             if weekday >= 5:
