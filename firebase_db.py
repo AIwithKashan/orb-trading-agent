@@ -303,3 +303,28 @@ def get_today_trades(uid: str) -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error fetching today's trades for user {uid}: {e}")
         return []
+
+
+def get_open_trades(uid: str) -> List[Dict[str, Any]]:
+    """Gets all open trades (where pnl is None) across any date."""
+    db = get_firestore_client()
+    if not db:
+        return []
+    
+    try:
+        trades_ref = (
+            db.collection("users").document(uid).collection("trades")
+            .where("pnl", "==", None)
+        )
+        docs = trades_ref.stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    except Exception as e:
+        logger.error(f"Error fetching open trades for user {uid}: {e}")
+        # Fallback: fetch last 100 trades and filter in memory
+        try:
+            history = get_trade_history(uid, limit=100)
+            return [t for t in history if t.get("pnl") is None]
+        except Exception as ex:
+            logger.error(f"Fallback fetch open trades failed: {ex}")
+            return []
+

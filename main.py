@@ -30,7 +30,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[
     
     return decoded_token
 
-# Startup: Start bots for users who have bot_active=True and valid keys in Firestore
+# Startup: Start bots for users who are onboarded to monitor open trades and handle sessions
 @app.on_event("startup")
 async def startup_event():
     logger.info("Server starting up. Initializing Firebase DB connection...")
@@ -45,19 +45,21 @@ async def startup_event():
         for doc in users:
             user_data = doc.to_dict()
             uid = doc.id
-            if user_data.get("bot_active", False):
+            if user_data.get("onboarded", False):
+                dry_run = user_data.get("dry_run", True)
                 keys = firebase_db.get_user_alpaca_keys(uid)
-                if keys:
+                if dry_run or keys:
                     settings = {
+                        "bot_active": user_data.get("bot_active", True),
                         "trade_limit": user_data.get("trade_limit", 3),
-                        "dry_run": user_data.get("dry_run", True),
+                        "dry_run": dry_run,
                         "stop_loss_pct": user_data.get("stop_loss_pct", 0.0),
                         "take_profit_pct": user_data.get("take_profit_pct", 0.0),
                         "risk_dollars": user_data.get("risk_dollars", 10.0)
                     }
                     bot_manager.start_bot(uid, keys, settings)
                     active_count += 1
-        logger.info(f"Auto-started {active_count} active user bots on startup.")
+        logger.info(f"Auto-started {active_count} user bot threads on startup.")
     except Exception as e:
         logger.error(f"Error auto-starting user bots on startup: {e}")
 
@@ -312,25 +314,28 @@ async def update_settings(payload: Dict[str, Any], user: Dict[str, Any] = Depend
     # Apply thread management dynamically
     user_info = firebase_db.get_user(uid) or {}
     bot_active = user_info.get("bot_active", True)
+    dry_run = user_info.get("dry_run", True)
+    onboarded = user_info.get("onboarded", False)
     
-    if bot_active:
+    if onboarded:
         keys = firebase_db.get_user_alpaca_keys(uid)
-        if keys:
-            bot_manager.start_bot(uid, keys, {
-                "trade_limit": user_info.get("trade_limit", 3),
-                "dry_run": user_info.get("dry_run", False),
-                "stop_loss_pct": user_info.get("stop_loss_pct", 0.0),
-                "take_profit_pct": user_info.get("take_profit_pct", 0.0),
-                "risk_dollars": user_info.get("risk_dollars", 10.0)
-            })
-        else:
-            # Missing keys, force bot inactive
+        if not dry_run and not keys:
+            # Force bot inactive in database, stop thread, and raise error
             firebase_db.save_user_settings(uid, {"bot_active": False})
             bot_manager.stop_bot(uid)
-            # If during onboarding and keys not set yet, don't throw exception, just stop the thread
-            if user_info.get("onboarded", False):
-                raise HTTPException(status_code=400, detail="Cannot activate bot without valid Alpaca API keys.")
+            raise HTTPException(status_code=400, detail="Cannot activate live trading without valid Alpaca API keys.")
+        
+        # Start/restart bot thread with updated settings, keeping it running to monitor open positions even if bot_active is False
+        bot_manager.start_bot(uid, keys, {
+            "bot_active": bot_active,
+            "trade_limit": user_info.get("trade_limit", 3),
+            "dry_run": dry_run,
+            "stop_loss_pct": user_info.get("stop_loss_pct", 0.0),
+            "take_profit_pct": user_info.get("take_profit_pct", 0.0),
+            "risk_dollars": user_info.get("risk_dollars", 10.0)
+        })
     else:
+        # User not onboarded yet, keep bot thread stopped
         bot_manager.stop_bot(uid)
         
     return {"status": "success", "bot_active": bot_active}
@@ -351,16 +356,7 @@ async def toggle_dryrun(user: Dict[str, Any] = Depends(get_current_user)) -> Dic
     user_info = firebase_db.get_user(uid) or {}
     new_state = not user_info.get("dry_run", False)
     
-    # If bot is running, stop and restart with new setting
-    success = firebase_db.save_user_settings(uid, {"dry_run": new_state})
-    if success and user_info.get("bot_active", True):
-        keys = firebase_db.get_user_alpaca_keys(uid)
-        if keys:
-            bot_manager.start_bot(uid, keys, {
-                "trade_limit": user_info.get("trade_limit", 3),
-                "dry_run": new_state
-            })
-            
+    await update_settings({"dry_run": new_state}, user)
     return {"status": "success", "dry_run": new_state}
 
 @app.post("/api/liquidate")
