@@ -67,9 +67,9 @@
         }
 
         [data-theme="dark"] .glass-panel {
-            background: var(--card-bg);
-            border-color: var(--stroke-subtle);
-            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+            background: var(--card-bg) !important;
+            border-color: var(--stroke-subtle) !important;
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3) !important;
         }
 
         [data-theme="dark"] .text-slate-800,
@@ -182,6 +182,42 @@
             border-radius: 2px;
             box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
         }
+
+        /* Shimmer loading animation */
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        .shimmer-loader {
+            background: linear-gradient(90deg, rgba(226, 232, 240, 0.2) 25%, rgba(203, 213, 225, 0.4) 50%, rgba(226, 232, 240, 0.2) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        [data-theme="dark"] .shimmer-loader {
+            background: linear-gradient(90deg, rgba(30, 41, 59, 0.4) 25%, rgba(51, 65, 85, 0.6) 50%, rgba(30, 41, 59, 0.4) 75%) !important;
+            background-size: 200% 100% !important;
+        }
+
+        /* Connection error banner style for dark theme */
+        [data-theme="dark"] #connection-error-banner {
+            background-color: rgba(239, 68, 68, 0.15) !important;
+            border-color: rgba(239, 68, 68, 0.3) !important;
+            color: #fca5a5 !important;
+        }
+
+        /* Onboarding active radio card overrides for dark theme */
+        [data-theme="dark"] label[id^="exp-lbl-"], [data-theme="dark"] label[id^="risk-lbl-"] {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            background-color: transparent !important;
+        }
+        [data-theme="dark"] label[id^="exp-lbl-"].border-blue-500, [data-theme="dark"] label[id^="risk-lbl-"].border-blue-500 {
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.1) !important;
+        }
     </style>
 </head>
 <body class="selection:bg-blue-100 selection:text-blue-900 min-h-screen flex flex-col justify-between">
@@ -211,7 +247,7 @@
         <!-- ========================================== -->
         <!-- SIGN IN / AUTHENTICATION INTERFACE -->
         <!-- ========================================== -->
-        <div id="auth-panel" class="hidden flex flex-col items-center justify-center space-y-8 py-6 w-full max-w-5xl mx-auto">
+        <div id="auth-panel" class="hidden flex flex-col items-center justify-center space-y-8 py-6 w-full max-w-5xl mx-auto" style="display: none;">
             <!-- Hero Header -->
             <div class="text-center space-y-3 max-w-2xl">
                 <div class="inline-flex p-1.5 bg-slate-900/10 border border-slate-200/50 rounded-2xl shadow-md mb-1">
@@ -234,7 +270,7 @@
                         <i class="ph ph-cpu text-lg"></i>
                     </div>
                     <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider uppercase">ORB Engine</h3>
-                    <p class="text-[10px] text-slate-450 leading-relaxed">Scans 50 major US stocks simultaneously. Computes precise 5-minute opening range boundaries at market open.</p>
+                    <p class="text-[10px] text-slate-450 leading-relaxed">Scans 50 major US stocks simultaneously. Computes precise 15-minute opening range boundaries at market open.</p>
                 </div>
                 <!-- Card 2 -->
                 <div class="glass-panel p-5 rounded-xl space-y-2 border border-slate-200/40 text-center md:text-left">
@@ -277,7 +313,16 @@
         <!-- ========================================== -->
         <!-- CORE LOGGED-IN SYSTEM INTERFACES -->
         <!-- ========================================== -->
-        <div id="dashboard-panel" class="hidden flex-1 flex flex-col space-y-6">
+        <div id="dashboard-panel" class="hidden flex-1 flex flex-col space-y-6" style="display: none;">
+            <!-- Connection Alert Banner -->
+            <div id="connection-error-banner" class="hidden flex items-center justify-between px-4 py-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-sm animate-pulse">
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-warning-octagon text-base"></i>
+                    <span>Core gateway connection degraded. Attempting automated sync recovery...</span>
+                </div>
+                <button onclick="fetchBotState()" class="px-2.5 py-1 bg-red-100 hover:bg-red-200 rounded-md transition-all">Reconnect Now</button>
+            </div>
+
             <!-- HEADER NAVIGATION BAR -->
             <header class="flex flex-col md:flex-row justify-between items-center glass-panel p-4 rounded-xl gap-4">
                 <div class="flex items-center gap-3">
@@ -293,6 +338,10 @@
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
                                 Operational
                             </div>
+                            <div onclick="openChangelogModal()" class="cursor-pointer flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100 text-[8px] font-bold text-blue-650 uppercase tracking-wider hover:bg-blue-100 transition-all" title="View Changelog">
+                                <i class="ph ph-sparkle text-[9px] text-blue-600 animate-pulse"></i>
+                                What's New
+                            </div>
                         </div>
                         <p class="text-[9px] font-bold tracking-wider text-slate-450 uppercase">US Stocks ORB System</p>
                     </div>
@@ -302,6 +351,7 @@
                 <div class="flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
                     <button id="tab-dash" onclick="switchTab('dash')" class="tab-btn active px-1 py-1">Dashboard</button>
                     <button id="tab-history" onclick="switchTab('history')" class="tab-btn px-1 py-1">History Logs</button>
+                    <button id="tab-backtest" onclick="switchTab('backtest')" class="tab-btn px-1 py-1">Backtest</button>
                     <button id="tab-settings" onclick="switchTab('settings')" class="tab-btn px-1 py-1">API Settings</button>
                     <button id="tab-docs" onclick="switchTab('docs')" class="tab-btn px-1 py-1">Documentation</button>
                 </div>
@@ -340,7 +390,12 @@
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2 border border-slate-200 bg-white/60 px-3 py-1.5 rounded-lg text-[10px] shadow-sm">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
-                        <span class="font-bold text-slate-500">LIVE PKT:</span>
+                        <select id="timezone-select" onchange="changeTimezone()" class="bg-transparent border-none outline-none font-bold text-slate-500 cursor-pointer p-0 text-[10px] font-sans">
+                            <option value="Asia/Karachi">PKT:</option>
+                            <option value="US/Eastern">EST:</option>
+                            <option value="UTC">UTC:</option>
+                            <option value="local">LOCAL:</option>
+                        </select>
                         <span id="pkt-clock" class="mono-font font-bold text-slate-850">--:--:--</span>
                     </div>
                     <span id="hud-pulse-indicator" class="tech-font text-[8px] bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md font-bold uppercase tracking-wider">STANDBY</span>
@@ -360,7 +415,9 @@
                             <i class="ph ph-bank text-xl text-emerald-600"></i>
                         </div>
                         <div class="mt-2">
-                            <h3 id="account-balance-text" class="tech-font text-2xl font-bold text-slate-800">$0.00</h3>
+                            <h3 id="account-balance-text" class="tech-font text-2xl font-bold text-slate-800">
+                                <div class="h-6 w-24 rounded shimmer-loader mt-1"></div>
+                            </h3>
                             <p id="account-balance-label" class="text-[9px] text-slate-400 mt-1 uppercase font-semibold">Alpaca Paper Equity</p>
                         </div>
                     </div>
@@ -372,7 +429,9 @@
                             <i class="ph ph-chart-line-up text-xl text-blue-600"></i>
                         </div>
                         <div class="mt-2">
-                            <h3 id="trade-limit-text" class="tech-font text-2xl font-bold text-blue-600">0 / 3</h3>
+                            <h3 id="trade-limit-text" class="tech-font text-2xl font-bold text-blue-600">
+                                <div class="h-6 w-16 rounded shimmer-loader mt-1"></div>
+                            </h3>
                             <p class="text-[9px] text-slate-400 mt-1 uppercase font-semibold">Trades Taken Today</p>
                         </div>
                     </div>
@@ -395,7 +454,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-3 gap-4">
                         <div>
                             <h2 class="tech-font text-sm font-bold text-slate-850 tracking-widest">ASSETS SCANNER MATRIX (50 STOCKS)</h2>
-                            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Calculates 5-Minute Breakouts dynamically</p>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Calculates 15-Minute Breakouts dynamically</p>
                         </div>
                         
                         <div class="flex items-center gap-3 w-full md:w-auto">
@@ -546,11 +605,21 @@
                     </div>
                 </div>
 
-                <!-- Equity Curve Chart Panel -->
-                <div class="glass-panel p-5 rounded-xl">
-                    <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase mb-4 border-b border-slate-100 pb-2">EQUITY CURVE // REALIZED CUMULATIVE P&L</h3>
-                    <div class="w-full h-[220px] relative">
-                        <canvas id="equity-chart"></canvas>
+                <!-- Realized Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Equity Curve Chart Panel -->
+                    <div class="glass-panel p-5 rounded-xl">
+                        <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase mb-4 border-b border-slate-100 pb-2">EQUITY CURVE // REALIZED CUMULATIVE P&L</h3>
+                        <div class="w-full h-[220px] relative">
+                            <canvas id="equity-chart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Ticker Breakdown Chart Panel -->
+                    <div class="glass-panel p-5 rounded-xl">
+                        <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase mb-4 border-b border-slate-100 pb-2">REALIZED P&L BY STOCK TICKER</h3>
+                        <div class="w-full h-[220px] relative">
+                            <canvas id="ticker-pnl-chart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
@@ -580,6 +649,128 @@
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB CONTAINER: 2. BACKTEST WORKSPACE VIEW -->
+            <!-- ========================================== -->
+            <div id="view-backtest" class="tab-view hidden space-y-6">
+                <!-- Backtest configuration card -->
+                <div class="glass-panel p-5 rounded-xl space-y-6">
+                    <div>
+                        <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase">HISTORICAL ORB BACKTEST SIMULATOR</h3>
+                        <p class="text-[9px] text-slate-450 uppercase tracking-widest font-bold mt-1">Simulate Opening Range Breakouts over prior days using consolidated Yahoo Finance wicks</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs font-semibold">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Stock Tickers</label>
+                            <input id="backtest-tickers" type="text" value="TSLA, NVDA, AAPL, MSFT, AMD" placeholder="e.g. AAPL, TSLA" class="px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg font-semibold text-xs uppercase">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Start Date</label>
+                            <input id="backtest-start-date" type="date" class="px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg font-semibold text-xs">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">End Date</label>
+                            <input id="backtest-end-date" type="date" class="px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg font-semibold text-xs">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Single Trade Risk ($)</label>
+                            <input id="backtest-risk" type="number" value="10" class="px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg font-semibold text-xs">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Reward Ratio (R:R)</label>
+                            <input id="backtest-rr" type="number" step="0.1" value="1.5" class="px-3 py-2 border border-slate-200 bg-white/60 focus:bg-white focus:border-blue-500 outline-none rounded-lg font-semibold text-xs">
+                        </div>
+                    </div>
+
+                    <button onclick="runBacktest()" id="btn-run-backtest" class="flex items-center justify-center gap-2 w-full py-3.5 bg-blue-650 hover:bg-blue-700 text-white font-bold tracking-widest text-xs uppercase rounded-lg shadow-md transition-all duration-300">
+                        <span>LAUNCH BACKTEST SIMULATION</span>
+                        <i class="ph ph-play-circle text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Simulation results view (Hidden until run) -->
+                <div id="backtest-results-panel" class="hidden space-y-6">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Total PnL -->
+                        <div class="glass-panel p-4 rounded-xl text-center border-l-2 border-l-emerald-500" id="backtest-card-pnl">
+                            <div class="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Simulated Total P&L</div>
+                            <div id="bt-stat-pnl" class="tech-font text-xl font-bold text-emerald-600 mt-1">$0.00</div>
+                        </div>
+                        <!-- Win Rate -->
+                        <div class="glass-panel p-4 rounded-xl text-center border-l-2 border-l-blue-500">
+                            <div class="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Win Rate %</div>
+                            <div id="bt-stat-winrate" class="tech-font text-xl font-bold text-blue-600 mt-1">0%</div>
+                        </div>
+                        <!-- Profit Factor -->
+                        <div class="glass-panel p-4 rounded-xl text-center border-l-2 border-l-indigo-500">
+                            <div class="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Profit Factor</div>
+                            <div id="bt-stat-pf" class="tech-font text-xl font-bold text-indigo-500 mt-1">1.0</div>
+                        </div>
+                        <!-- Total Trades -->
+                        <div class="glass-panel p-4 rounded-xl text-center border-l-2 border-l-slate-400">
+                            <div class="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Trades Executed</div>
+                            <div id="bt-stat-trades" class="tech-font text-xl font-bold text-slate-700 mt-1">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Chart & Tickers breakdown row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Chart -->
+                        <div class="lg:col-span-2 glass-panel p-5 rounded-xl space-y-3">
+                            <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase border-b border-slate-100 pb-2">SIMULATION CUMULATIVE EQUITY CURVE</h3>
+                            <div class="w-full h-[250px] relative">
+                                <canvas id="backtest-equity-chart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Breakdown table -->
+                        <div class="glass-panel p-5 rounded-xl space-y-3 flex flex-col">
+                            <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase border-b border-slate-100 pb-2">PERFORMANCE BY ASSET</h3>
+                            <div class="flex-1 overflow-y-auto max-h-[250px] text-xs">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider">
+                                            <th class="py-1.5">Asset</th>
+                                            <th class="py-1.5">Trades</th>
+                                            <th class="py-1.5 text-right">Net P&L</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="backtest-ticker-tbody" class="mono-font text-slate-700">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulation Trades Log -->
+                    <div class="glass-panel p-5 rounded-xl">
+                        <h3 class="tech-font text-xs font-bold text-slate-800 tracking-widest uppercase mb-4 border-b border-slate-100 pb-2">SIMULATED EXECUTION TELEMETRY LOGS</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-400 uppercase tracking-wider font-semibold">
+                                        <th class="py-2.5">Date</th>
+                                        <th class="py-2.5">Asset</th>
+                                        <th class="py-2.5">Side</th>
+                                        <th class="py-2.5">Entry Time</th>
+                                        <th class="py-2.5">Entry Price</th>
+                                        <th class="py-2.5">Exit Time</th>
+                                        <th class="py-2.5">Exit Price</th>
+                                        <th class="py-2.5">Result</th>
+                                        <th class="py-2.5 text-right">P/L ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="backtest-trades-tbody" class="mono-font text-slate-700">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -780,7 +971,7 @@
                                     <div>
                                         <span class="font-bold text-slate-850 uppercase tracking-wider text-[10px] block">🛡️ Stop-Loss (SL) % Override</span>
                                         <span class="text-slate-500 leading-relaxed block mt-0.5">
-                                            The custom percentage below (for Buy orders) or above (for Sell orders) the entry price where the engine will trigger a risk-mitigating stop order. If set to <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">0</code>, the stop-loss defaults to the opposite boundary of the 5-Minute Opening Range (standard ORB breakout).
+                                            The custom percentage below (for Buy orders) or above (for Sell orders) the entry price where the engine will trigger a risk-mitigating stop order. If set to <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">0</code>, the stop-loss defaults to the opposite boundary of the 15-Minute Opening Range (standard ORB breakout).
                                         </span>
                                     </div>
                                     <div>
@@ -857,11 +1048,11 @@
 
             <!-- Footer information -->
             <footer class="flex flex-col md:flex-row justify-between items-center text-slate-400 text-[8px] uppercase tracking-[0.2em] font-bold pt-6 border-t border-slate-200/60 gap-3">
-                <span>© 2025 AIwithKashan — QUANTUM DECK <span onclick="openChangelogModal()" class="cursor-pointer text-blue-650 hover:underline">v3.1 ●</span></span>
+                <span>© 2026 AIwithKashan — QUANTUM DECK <span onclick="openChangelogModal()" class="cursor-pointer text-blue-650 hover:underline">v3.1 ●</span></span>
                 <span class="flex items-center gap-3">
-                    <a href="#" onclick="switchTab('docs'); scrollToDocSection('doc-security');" class="hover:text-slate-700 transition-colors">Terms of Use</a> | 
-                    <a href="#" onclick="switchTab('docs'); scrollToDocSection('doc-security');" class="hover:text-slate-700 transition-colors">Privacy Policy</a> | 
-                    <a href="#" onclick="switchTab('docs');" class="hover:text-slate-700 transition-colors font-extrabold">Documentation</a>
+                    <a href="javascript:void(0)" onclick="openTermsModal()" class="hover:text-slate-700 transition-colors">Terms of Use</a> | 
+                    <a href="javascript:void(0)" onclick="openPrivacyModal()" class="hover:text-slate-700 transition-colors">Privacy Policy</a> | 
+                    <a href="javascript:void(0)" onclick="switchTab('docs')" class="hover:text-slate-700 transition-colors font-extrabold">Documentation</a>
                 </span>
                 <span>Powered by Alpaca API + Firebase</span>
             </footer>
@@ -888,20 +1079,44 @@
                 
                 <div class="flex flex-col gap-1.5">
                     <label class="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Trading Experience</label>
-                    <select id="onboard-experience" class="w-full px-3 py-2 border border-slate-200 bg-white focus:border-blue-500 outline-none rounded-lg text-xs font-semibold">
-                        <option value="Beginner">Beginner (Starting Out)</option>
-                        <option value="Intermediate" selected>Intermediate (Some Experience)</option>
-                        <option value="Advanced">Advanced (Expert Trader)</option>
-                    </select>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer border border-slate-200 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative" id="exp-lbl-Beginner">
+                            <input type="radio" name="experience" value="Beginner" class="hidden" onchange="updateOnboardRadioSelection()">
+                            <span class="font-bold text-slate-800 text-[10px]">Beginner</span>
+                            <span class="text-[7.5px] text-slate-400 mt-0.5">Starting Out</span>
+                        </label>
+                        <label class="cursor-pointer border-2 border-blue-500 bg-blue-50/20 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative" id="exp-lbl-Intermediate">
+                            <input type="radio" name="experience" value="Intermediate" checked class="hidden" onchange="updateOnboardRadioSelection()">
+                            <span class="font-bold text-slate-800 text-[10px]">Intermediate</span>
+                            <span class="text-[7.5px] text-slate-400 mt-0.5">Some Experience</span>
+                        </label>
+                        <label class="cursor-pointer border border-slate-200 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative" id="exp-lbl-Advanced">
+                            <input type="radio" name="experience" value="Advanced" class="hidden" onchange="updateOnboardRadioSelection()">
+                            <span class="font-bold text-slate-800 text-[10px]">Advanced</span>
+                            <span class="text-[7.5px] text-slate-400 mt-0.5">Expert Trader</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
                     <label class="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Risk Tolerance</label>
-                    <select id="onboard-risk" class="w-full px-3 py-2 border border-slate-200 bg-white focus:border-blue-500 outline-none rounded-lg text-xs font-semibold">
-                        <option value="Conservative">Conservative (Midpoint SL / 2:1 RR)</option>
-                        <option value="Moderate" selected>Moderate (Standard ORB Boundaries)</option>
-                        <option value="Aggressive">Aggressive (High Volatility Sizing)</option>
-                    </select>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer border border-slate-200 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative" id="risk-lbl-Conservative">
+                            <input type="radio" name="risk" value="Conservative" class="hidden" onchange="updateOnboardRadioSelection()">
+                            <span class="font-bold text-slate-800 text-[10px]">Conservative</span>
+                            <span class="text-[7.5px] text-slate-400 mt-0.5">Midpoint SL</span>
+                        </label>
+                        <label class="cursor-pointer border-2 border-blue-500 bg-blue-50/20 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative" id="risk-lbl-Moderate">
+                            <input type="radio" name="risk" value="Moderate" checked class="hidden" onchange="updateOnboardRadioSelection()">
+                            <span class="font-bold text-slate-800 text-[10px]">Moderate</span>
+                            <span class="text-[7.5px] text-slate-400 mt-0.5">Standard ORB</span>
+                        </label>
+                        <label class="cursor-pointer border border-slate-200 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative" id="risk-lbl-Aggressive">
+                            <input type="radio" name="risk" value="Aggressive" class="hidden" onchange="updateOnboardRadioSelection()">
+                            <span class="font-bold text-slate-800 text-[10px]">Aggressive</span>
+                            <span class="text-[7.5px] text-slate-400 mt-0.5">High Volatility</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
@@ -1026,6 +1241,56 @@
         </div>
     </div>
 
+    <!-- Terms of Use Modal Overlay -->
+    <div id="terms-modal" class="fixed inset-0 bg-slate-900/40 backdrop-filter backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-lg w-full p-6 rounded-2xl space-y-5 shadow-2xl relative border border-slate-200/50 bg-white/95">
+            <button onclick="closeTermsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+            <div class="text-center border-b border-slate-100 pb-3">
+                <div class="inline-flex p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-600 mb-2">
+                    <i class="ph ph-scroll text-2xl"></i>
+                </div>
+                <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider">TERMS OF USE & RISK WARNER</h3>
+                <p class="text-[8px] text-slate-450 uppercase tracking-widest font-bold mt-1">Quantum Deck Workstation Agreement</p>
+            </div>
+            <div class="text-slate-600 text-[10px] space-y-3 max-h-60 overflow-y-auto leading-relaxed pr-2">
+                <p><b>1. Algorithmic System Use:</b> Quantum Deck is an automated trading terminal that executes the Opening Range Breakout (ORB) strategy. By activating the bot, you authorize automatic scanning, limit calculated entries, and bracket order submissions to your Alpaca account.</p>
+                <p><b>2. No Financial Advice:</b> All system telemetry, dry-run simulation trades, and logs are for informational purposes. Nothing on this platform constitutes direct financial, investment, or legal advice.</p>
+                <p><b>3. Risk Acceptance:</b> Algorithmic trading is highly volatile. You are fully responsible for setting appropriate risk parameters (e.g. flat dollar risk amounts). System developers are not responsible for financial losses incurred via API execution errors, connection dropouts, or market slippage.</p>
+                <p><b>4. Alpaca API Authorization:</b> You retain complete control over your credentials. Keys are encrypted symmetrically using AES-256 (Fernet) on the server. You may invalidate keys or purge your profile at any time.</p>
+            </div>
+            <button onclick="closeTermsModal()" class="w-full py-2.5 bg-slate-850 hover:bg-slate-900 text-white font-bold tracking-widest text-[9px] uppercase rounded-lg shadow-sm transition-all duration-300">
+                Acknowledge & Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal Overlay -->
+    <div id="privacy-modal" class="fixed inset-0 bg-slate-900/40 backdrop-filter backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-lg w-full p-6 rounded-2xl space-y-5 shadow-2xl relative border border-slate-200/50 bg-white/95">
+            <button onclick="closePrivacyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+            <div class="text-center border-b border-slate-100 pb-3">
+                <div class="inline-flex p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-600 mb-2">
+                    <i class="ph ph-shield-check text-2xl"></i>
+                </div>
+                <h3 class="tech-font text-xs font-bold text-slate-800 tracking-wider">PRIVACY & DATA POLICY</h3>
+                <p class="text-[8px] text-slate-450 uppercase tracking-widest font-bold mt-1">API encryption and security principles</p>
+            </div>
+            <div class="text-slate-600 text-[10px] space-y-3 max-h-60 overflow-y-auto leading-relaxed pr-2">
+                <p><b>1. Cryptographic Security:</b> Your Alpaca API Key and Secret are encrypted at rest using server-side <b>AES-256 (Fernet)</b> symmetric encryption prior to Firestore write operations. No plain-text credentials reside in our databases.</p>
+                <p><b>2. Direct API Boundary:</b> Secure credentials are only exchanged with official Alpaca API endpoints (`api.alpaca.markets` or `paper-api.alpaca.markets`) via encrypted SSL channels during order placement.</p>
+                <p><b>3. User Identity:</b> We store only basic authentication fields provided by Google Firebase (display name, email address, profile photo URL) to separate user environments.</p>
+                <p><b>4. Permanent Purge:</b> Triggering the "Delete Account" action under Settings instantly deletes your Firestore config node, all encrypted keys, settings parameters, and historical trade logs permanently.</p>
+            </div>
+            <button onclick="closePrivacyModal()" class="w-full py-2.5 bg-slate-850 hover:bg-slate-900 text-white font-bold tracking-widest text-[9px] uppercase rounded-lg shadow-sm transition-all duration-300">
+                Acknowledge & Close
+            </button>
+        </div>
+    </div>
+
     <!-- Beautiful Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
 
@@ -1041,6 +1306,8 @@
         let currentFilter = 'all';
         let activeTab = 'dash';
         let uiPollInterval = null;
+        let lastTrades = null;
+        let connectionFailures = 0;
 
         // Toast Notification System
         function showToast(message, type = 'info') {
@@ -1133,22 +1400,51 @@
         // Initialize theme
         initTheme();
 
-        // Digital Clock (Pakistan Time)
+        // Timezone Selector and Clock
+        let activeTimezone = localStorage.getItem('user-timezone') || 'Asia/Karachi';
+
+        function changeTimezone() {
+            const select = document.getElementById('timezone-select');
+            if (select) {
+                activeTimezone = select.value;
+                localStorage.setItem('user-timezone', activeTimezone);
+                updatePKTClock();
+            }
+        }
+
         function updatePKTClock() {
+            const pktClock = document.getElementById('pkt-clock');
+            if (!pktClock) return;
+            
             const options = {
-                timeZone: 'Asia/Karachi',
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: false
             };
-            const formatter = new Intl.DateTimeFormat([], options);
-            const pktClock = document.getElementById('pkt-clock');
-            if (pktClock) {
+            
+            if (activeTimezone !== 'local') {
+                options.timeZone = activeTimezone;
+            }
+            
+            try {
+                const formatter = new Intl.DateTimeFormat([], options);
+                pktClock.textContent = formatter.format(new Date());
+            } catch (err) {
+                console.error("Format error for tz", activeTimezone, err);
+                const formatter = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
                 pktClock.textContent = formatter.format(new Date());
             }
         }
         setInterval(updatePKTClock, 1000);
+        
+        // Sync selector value on page load
+        setTimeout(() => {
+            const select = document.getElementById('timezone-select');
+            if (select) {
+                select.value = activeTimezone;
+            }
+        }, 500);
 
         // Fetch Firebase Credentials from FastAPI Server
         async function bootstrapFirebase() {
@@ -1199,7 +1495,9 @@
 
                             // Display dashboard panels
                             document.getElementById('auth-panel').classList.add('hidden');
+                            document.getElementById('auth-panel').style.display = 'none';
                             document.getElementById('dashboard-panel').classList.remove('hidden');
+                            document.getElementById('dashboard-panel').style.display = 'flex';
 
                             hideLoader();
 
@@ -1208,6 +1506,7 @@
                                 document.getElementById('onboard-name').value = currentUser.display_name || '';
                                 document.getElementById('onboard-preview').src = currentUser.profile_pic || user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
                                 document.getElementById('onboarding-modal').classList.remove('hidden');
+                                updateOnboardRadioSelection(); // Initialize radio styling
                             }
                             
                             // Initialize UI loop
@@ -1220,15 +1519,18 @@
                             checkSystemHealth();
                             setInterval(checkSystemHealth, 30000);
                             
-                            // Initialize mobile device check
+                            // Initialize mobile device check & backtest defaults
                             checkMobileDevice();
+                            initBacktestDates();
                         } else {
                             signOutUser();
                         }
                     } else {
                         // Display sign in screen
                         document.getElementById('dashboard-panel').classList.add('hidden');
+                        document.getElementById('dashboard-panel').style.display = 'none';
                         document.getElementById('auth-panel').classList.remove('hidden');
+                        document.getElementById('auth-panel').style.display = 'flex';
                         hideLoader();
                     }
                 });
@@ -1262,6 +1564,7 @@
         // =====================================================================
         let logEventSource = null;
         let equityChartInstance = null;
+        let tickerPnlChartInstance = null;
         let lastBotState = { trade_count: 0, trades_len: 0, bot_running: false };
 
         // Check system operational status
@@ -1434,6 +1737,69 @@
             });
         }
 
+        // Ticker Breakdown Bar Chart Builder (Chart.js)
+        function updateTickerPnlChart(trades) {
+            const canvas = document.getElementById('ticker-pnl-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate total realized P&L per ticker symbol
+            const tickerPnls = {};
+            trades.forEach(trade => {
+                const symbol = trade.symbol;
+                const pnl = trade.pnl !== null ? trade.pnl : 0.0;
+                tickerPnls[symbol] = (tickerPnls[symbol] || 0.0) + pnl;
+            });
+            
+            // Sort keys
+            const tickers = Object.keys(tickerPnls).sort();
+            const pnlValues = tickers.map(t => tickerPnls[t]);
+            
+            // Determine dynamic coloring based on profit/loss values
+            const barColors = pnlValues.map(val => val >= 0 ? 'rgba(16, 185, 129, 0.75)' : 'rgba(239, 68, 68, 0.75)');
+            const borderColors = pnlValues.map(val => val >= 0 ? '#10b981' : '#ef4444');
+            
+            if (tickerPnlChartInstance) {
+                tickerPnlChartInstance.destroy();
+            }
+            
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            
+            tickerPnlChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: tickers,
+                    datasets: [{
+                        label: 'Realized P&L ($)',
+                        data: pnlValues,
+                        backgroundColor: barColors,
+                        borderColor: borderColors,
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 8 } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 8 } }
+                        }
+                    }
+                }
+            });
+        }
+
         // Changelog Modal
         function openChangelogModal() {
             document.getElementById('changelog-modal').classList.remove('hidden');
@@ -1501,6 +1867,9 @@
             } else if (tab === 'docs') {
                 document.getElementById('tab-docs').classList.add('active');
                 targetEl = document.getElementById('view-docs');
+            } else if (tab === 'backtest') {
+                document.getElementById('tab-backtest').classList.add('active');
+                targetEl = document.getElementById('view-backtest');
             }
 
             if (targetEl) {
@@ -1548,17 +1917,60 @@
         async function fetchBotState() {
             try {
                 const statusRes = await authedFetch('/api/status');
-                if (!statusRes) return;
+                if (!statusRes || !statusRes.ok) {
+                    throw new Error("HTTP connection failed");
+                }
                 currentStatus = await statusRes.json();
                 
                 const levelsRes = await authedFetch('/api/levels');
-                if (levelsRes) {
+                if (levelsRes && levelsRes.ok) {
                     currentLevels = await levelsRes.json();
+                }
+
+                // Check for new trades / closed trades
+                if (lastTrades !== null && currentStatus.trades) {
+                    // New trades
+                    currentStatus.trades.forEach(trade => {
+                        const exists = lastTrades.some(t => t.symbol === trade.symbol && t.side === trade.side);
+                        if (!exists) {
+                            showToast(`🚀 [TRADE TRIGGER] Entered ${trade.side} position for ${trade.symbol} at $${trade.entry_price.toFixed(2)} (Qty: ${trade.qty})`, 'success');
+                        }
+                    });
+
+                    // Closed trades
+                    lastTrades.forEach(trade => {
+                        const exists = currentStatus.trades.some(t => t.symbol === trade.symbol && t.side === trade.side);
+                        if (!exists) {
+                            showToast(`🏁 [TRADE CLOSED] Position in ${trade.symbol} has been closed.`, 'info');
+                        }
+                    });
+                }
+                lastTrades = currentStatus.trades || [];
+
+                // Reset failures and hide banner
+                connectionFailures = 0;
+                const errBanner = document.getElementById('connection-error-banner');
+                if (errBanner) errBanner.classList.add('hidden');
+
+                const statusBadge = document.getElementById('system-status-badge');
+                if (statusBadge) {
+                    statusBadge.className = "flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100 text-[8px] font-bold text-emerald-650 uppercase tracking-wider";
+                    statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>Operational`;
                 }
 
                 renderUI();
             } catch (err) {
                 console.error("Connection failed:", err);
+                connectionFailures++;
+                if (connectionFailures >= 3) {
+                    const errBanner = document.getElementById('connection-error-banner');
+                    if (errBanner) errBanner.classList.remove('hidden');
+                    const statusBadge = document.getElementById('system-status-badge');
+                    if (statusBadge) {
+                        statusBadge.className = "flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 border border-red-150 text-[8px] font-bold text-red-600 uppercase tracking-wider";
+                        statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Degraded`;
+                    }
+                }
             }
         }
 
@@ -1703,18 +2115,42 @@
                     `);
                 });
             } else {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="py-12 text-center text-slate-400 uppercase font-medium">
-                            <div class="flex flex-col items-center justify-center space-y-3">
-                                <div class="relative w-12 h-12 flex items-center justify-center rounded-full bg-blue-50/50 border border-blue-100 text-blue-600">
-                                    <i class="ph ph-radar text-2xl animate-spin" style="animation-duration: 3s;"></i>
+                if (currentStatus.bot_running) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="py-12 text-center text-slate-400 uppercase font-medium">
+                                <div class="flex flex-col items-center justify-center space-y-3">
+                                    <div class="relative w-12 h-12 flex items-center justify-center rounded-full bg-blue-50/50 border border-blue-100 text-blue-600">
+                                        <i class="ph ph-radar text-2xl animate-spin" style="animation-duration: 3s;"></i>
+                                    </div>
+                                    <div class="text-[10px] tracking-widest font-black uppercase text-slate-500">Scanning 50 assets for breakouts...</div>
+                                    <p class="text-[9px] text-slate-400 max-w-[280px] normal-case leading-relaxed font-normal">
+                                        The automated trading agent is actively monitoring the markets for breakout signals.
+                                    </p>
                                 </div>
-                                <div class="text-[10px] tracking-widest font-black uppercase text-slate-500">Scanning 50 assets for breakouts...</div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="py-12 text-center text-slate-400 uppercase font-medium">
+                                <div class="flex flex-col items-center justify-center space-y-3">
+                                    <div class="relative w-12 h-12 flex items-center justify-center rounded-full bg-amber-50/50 border border-amber-250 text-amber-600">
+                                        <i class="ph ph-hand-palm text-2xl"></i>
+                                    </div>
+                                    <div class="text-[10px] tracking-widest font-black uppercase text-slate-500">Trading Agent Standby / Paused</div>
+                                    <p class="text-[9px] text-slate-400 max-w-[280px] normal-case leading-relaxed font-normal">
+                                        The automated strategy scanner is currently paused. Resume the agent to begin monitoring breakouts.
+                                    </p>
+                                    <button onclick="toggleBotState()" class="px-3.5 py-1.5 bg-blue-650 hover:bg-blue-700 text-white font-bold tracking-widest text-[9px] uppercase rounded-lg shadow-md transition-all duration-300">
+                                        Resume Agent
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
             }
 
             // Sync Toggle Buttons
@@ -1848,13 +2284,26 @@
                 } else {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-slate-400 uppercase font-semibold">No persistent historical trades found in the cloud logs database.</td>
+                            <td colspan="8" class="py-12 text-center">
+                                <div class="flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
+                                    <div class="w-12 h-12 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 border border-slate-200">
+                                        <i class="ph ph-folder-open text-2xl"></i>
+                                    </div>
+                                    <h4 class="tech-font text-[10px] font-bold text-slate-800 tracking-wider uppercase mt-1">NO CLOUD HISTORY FOUND</h4>
+                                    <p class="text-[9px] text-slate-400 leading-relaxed uppercase">You haven't executed any trades yet. Start the automated ORB scanner or run a backtest simulation to populate records.</p>
+                                    <div class="flex gap-2 pt-1 justify-center">
+                                        <button onclick="switchTab('settings')" class="px-3 py-1.5 bg-blue-50 border border-blue-150 rounded-lg text-blue-650 text-[9px] font-bold uppercase hover:bg-blue-600 hover:text-white transition-all">Setup API keys</button>
+                                        <button onclick="switchTab('backtest')" class="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-[9px] font-bold uppercase hover:bg-slate-200 transition-all">Run Backtest</button>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     `;
                 }
 
-                // Render equity chart
+                // Render equity & ticker breakdown charts
                 updateEquityChart(data.trades || []);
+                updateTickerPnlChart(data.trades || []);
 
             } catch (error) {
                 console.error("History fetch error:", error);
@@ -1880,11 +2329,36 @@
             }
         });
 
+        function updateOnboardRadioSelection() {
+            document.querySelectorAll('input[name="experience"]').forEach(radio => {
+                const val = radio.value;
+                const label = document.getElementById(`exp-lbl-${val}`);
+                if (label) {
+                    if (radio.checked) {
+                        label.className = "cursor-pointer border-2 border-blue-500 bg-blue-50/20 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50/50 transition-all select-none relative";
+                    } else {
+                        label.className = "cursor-pointer border border-slate-200 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative";
+                    }
+                }
+            });
+            document.querySelectorAll('input[name="risk"]').forEach(radio => {
+                const val = radio.value;
+                const label = document.getElementById(`risk-lbl-${val}`);
+                if (label) {
+                    if (radio.checked) {
+                        label.className = "cursor-pointer border-2 border-blue-500 bg-blue-50/20 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50/50 transition-all select-none relative";
+                    } else {
+                        label.className = "cursor-pointer border border-slate-200 rounded-lg p-2.5 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all select-none relative";
+                    }
+                }
+            });
+        }
+
         // Submit Onboarding Questions to settings API
         async function submitOnboarding() {
             const name = document.getElementById('onboard-name').value.trim();
-            const experience = document.getElementById('onboard-experience').value;
-            const risk = document.getElementById('onboard-risk').value;
+            const experience = document.querySelector('input[name="experience"]:checked')?.value || 'Intermediate';
+            const risk = document.querySelector('input[name="risk"]:checked')?.value || 'Moderate';
             const limit = parseInt(document.getElementById('onboard-limit').value) || 3;
 
             if (!name) {
@@ -2051,6 +2525,255 @@
                 console.error("CSV export error:", err);
                 showToast("Failed to compile CSV spreadsheet: " + err.message, "error");
             }
+        }
+
+        // Terms of Use & Privacy Modals handlers
+        function openTermsModal() {
+            document.getElementById('terms-modal').classList.remove('hidden');
+            gsap.fromTo("#terms-modal > div", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "power2.out" });
+        }
+        function closeTermsModal() {
+            gsap.to("#terms-modal > div", { scale: 0.9, opacity: 0, duration: 0.25, onComplete: () => {
+                document.getElementById('terms-modal').classList.add('hidden');
+            }});
+        }
+        function openPrivacyModal() {
+            document.getElementById('privacy-modal').classList.remove('hidden');
+            gsap.fromTo("#privacy-modal > div", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "power2.out" });
+        }
+        function closePrivacyModal() {
+            gsap.to("#privacy-modal > div", { scale: 0.9, opacity: 0, duration: 0.25, onComplete: () => {
+                document.getElementById('privacy-modal').classList.add('hidden');
+            }});
+        }
+
+        // Backtester helper scripts
+        let backtestChartInstance = null;
+
+        function initBacktestDates() {
+            const startInput = document.getElementById('backtest-start-date');
+            const endInput = document.getElementById('backtest-end-date');
+            if (startInput && endInput) {
+                const today = new Date();
+                const pastDate = new Date();
+                pastDate.setDate(today.getDate() - 15);
+                
+                startInput.value = pastDate.toISOString().split('T')[0];
+                endInput.value = today.toISOString().split('T')[0];
+                
+                // Enforce 60-day limit for yfinance 5m data
+                const minDate = new Date();
+                minDate.setDate(today.getDate() - 59);
+                startInput.min = minDate.toISOString().split('T')[0];
+                endInput.min = today.toISOString().split('T')[0];
+            }
+        }
+
+        async function runBacktest() {
+            const btn = document.getElementById('btn-run-backtest');
+            const tickersInput = document.getElementById('backtest-tickers').value.trim();
+            const startDate = document.getElementById('backtest-start-date').value;
+            const endDate = document.getElementById('backtest-end-date').value;
+            const risk = parseFloat(document.getElementById('backtest-risk').value) || 10;
+            const rr = parseFloat(document.getElementById('backtest-rr').value) || 1.5;
+
+            if (!tickersInput) {
+                showToast("Please enter at least one ticker symbol.", "error");
+                return;
+            }
+            if (!startDate || !endDate) {
+                showToast("Please select start and end dates.", "error");
+                return;
+            }
+
+            const tickers = tickersInput.split(',').map(t => t.trim().toUpperCase()).filter(t => t.length > 0);
+            
+            btn.disabled = true;
+            btn.innerHTML = `<span>SIMULATING TARGET BOUNDARIES...</span><i class="ph ph-circle-notch text-lg animate-spin"></i>`;
+            
+            try {
+                const res = await authedFetch('/api/backtest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tickers: tickers,
+                        start_date: startDate,
+                        end_date: endDate,
+                        risk_dollars: risk,
+                        rr_ratio: rr
+                    })
+                });
+
+                if (!res || !res.ok) {
+                    throw new Error("API simulation failure");
+                }
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    renderBacktestResults(data, risk);
+                    showToast("Historical ORB Backtest Simulation Completed!", "success");
+                } else {
+                    showToast("Backtest failed: " + data.message, "error");
+                }
+            } catch (err) {
+                console.error("Backtest error:", err);
+                showToast("Error running backtest: " + err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>LAUNCH BACKTEST SIMULATION</span><i class="ph ph-play-circle text-lg"></i>`;
+            }
+        }
+
+        function renderBacktestResults(data, risk) {
+            document.getElementById('backtest-results-panel').classList.remove('hidden');
+            
+            const summary = data.summary;
+            const trades = data.trades;
+
+            // Stats Cards
+            const pnlEl = document.getElementById('bt-stat-pnl');
+            const cardPnl = document.getElementById('backtest-card-pnl');
+            pnlEl.textContent = `${summary.total_pnl >= 0 ? '+' : ''}$${summary.total_pnl.toFixed(2)}`;
+            if (summary.total_pnl >= 0) {
+                pnlEl.className = "tech-font text-xl font-bold text-emerald-600 mt-1";
+                cardPnl.className = "glass-panel p-4 rounded-xl text-center border-l-2 border-l-emerald-500";
+            } else {
+                pnlEl.className = "tech-font text-xl font-bold text-red-650 mt-1";
+                cardPnl.className = "glass-panel p-4 rounded-xl text-center border-l-2 border-l-red-500";
+            }
+
+            document.getElementById('bt-stat-winrate').textContent = `${summary.win_rate}%`;
+            document.getElementById('bt-stat-pf').textContent = summary.profit_factor.toFixed(2);
+            document.getElementById('bt-stat-trades').textContent = summary.total_trades;
+
+            // Render Trades Tbody
+            const tradesTbody = document.getElementById('backtest-trades-tbody');
+            tradesTbody.innerHTML = '';
+            
+            if (trades.length === 0) {
+                tradesTbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 uppercase font-semibold">No breakout trades triggered in this period.</td></tr>`;
+            } else {
+                trades.forEach(trade => {
+                    const sideColor = trade.side === "Long" ? "text-emerald-600 font-bold" : "text-red-605 font-bold";
+                    const pnlColor = trade.pnl >= 0 ? "text-emerald-600 font-bold" : "text-red-600 font-bold";
+                    const resultBadge = trade.result === "TP" ? 
+                        `<span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-bold text-[8px] tracking-wider uppercase border border-emerald-200">TP</span>` :
+                        (trade.result === "SL" ? 
+                            `<span class="px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-bold text-[8px] tracking-wider uppercase border border-red-200">SL</span>` :
+                            `<span class="px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 font-bold text-[8px] tracking-wider uppercase border border-slate-200">EOD</span>`
+                        );
+
+                    tradesTbody.insertAdjacentHTML('beforeend', `
+                        <tr class="border-b border-slate-150 hover:bg-slate-100/20">
+                            <td class="py-2.5 text-slate-500">${trade.date}</td>
+                            <td class="py-2.5 font-bold text-slate-800">${trade.symbol}</td>
+                            <td class="py-2.5 ${sideColor} uppercase">${trade.side}</td>
+                            <td class="py-2.5">${trade.entry_time}</td>
+                            <td class="py-2.5">$${trade.entry_price.toFixed(2)}</td>
+                            <td class="py-2.5">${trade.exit_time}</td>
+                            <td class="py-2.5">$${trade.exit_price.toFixed(2)}</td>
+                            <td class="py-2.5">${resultBadge}</td>
+                            <td class="py-2.5 text-right ${pnlColor}">${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}</td>
+                        </tr>
+                    `);
+                });
+            }
+
+            // Performance By Asset (Breakdown table)
+            const tickerPnls = {};
+            const tickerTrades = {};
+            trades.forEach(trade => {
+                const s = trade.symbol;
+                tickerPnls[s] = (tickerPnls[s] || 0.0) + trade.pnl;
+                tickerTrades[s] = (tickerTrades[s] || 0) + 1;
+            });
+
+            const tickerTbody = document.getElementById('backtest-ticker-tbody');
+            tickerTbody.innerHTML = '';
+            const sortedTickers = Object.keys(tickerPnls).sort((a,b) => tickerPnls[b] - tickerPnls[a]);
+            
+            if (sortedTickers.length === 0) {
+                tickerTbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400">No assets.</td></tr>`;
+            } else {
+                sortedTickers.forEach(t => {
+                    const pnl = tickerPnls[t];
+                    const pnlColor = pnl >= 0 ? "text-emerald-600 font-bold" : "text-red-650 font-bold";
+                    tickerTbody.insertAdjacentHTML('beforeend', `
+                        <tr class="border-b border-slate-100">
+                            <td class="py-2 font-bold text-slate-800">${t}</td>
+                            <td class="py-2 text-slate-500">${tickerTrades[t]}</td>
+                            <td class="py-2 text-right ${pnlColor}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</td>
+                        </tr>
+                    `);
+                });
+            }
+
+            // Backtest Chart
+            renderBacktestChart(trades);
+        }
+
+        function renderBacktestChart(trades) {
+            const canvas = document.getElementById('backtest-equity-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const sorted = [...trades].sort((a, b) => {
+                const d1 = new Date(a.date + 'T' + a.entry_time);
+                const d2 = new Date(b.date + 'T' + b.entry_time);
+                return d1 - d2;
+            });
+
+            let labels = ["Start"];
+            let dataPoints = [0.0];
+            let cumulative = 0.0;
+
+            sorted.forEach(t => {
+                cumulative += t.pnl;
+                labels.push(`${t.date} ${t.entry_time}`);
+                dataPoints.push(cumulative);
+            });
+
+            if (backtestChartInstance) {
+                backtestChartInstance.destroy();
+            }
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            backtestChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Simulated P&L ($)',
+                        data: dataPoints,
+                        borderColor: '#2563eb',
+                        borderWidth: 2,
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: sorted.length === 0 ? 0 : 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 7 }, maxRotation: 45, minRotation: 45 }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 8 } }
+                        }
+                    }
+                }
+            });
         }
 
         // Start Firebase Auth check when DOM is ready

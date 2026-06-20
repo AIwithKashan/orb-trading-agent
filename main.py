@@ -405,3 +405,28 @@ async def delete_account(user: Dict[str, Any] = Depends(get_current_user)) -> Di
         raise HTTPException(status_code=500, detail="Failed to delete account data from Firestore.")
     return {"status": "success"}
 
+
+from pydantic import BaseModel
+from typing import List
+
+class BacktestRequest(BaseModel):
+    tickers: List[str]
+    start_date: str
+    end_date: str
+    risk_dollars: float = 10.0
+    rr_ratio: float = 1.5
+
+@app.post("/api/backtest")
+async def api_backtest(req: BacktestRequest, user: Dict[str, Any] = Depends(auth.get_current_user)) -> Dict[str, Any]:
+    """Runs a historical simulation of the ORB strategy for a list of tickers and date range."""
+    from strategy import run_orb_backtest
+    res = run_orb_backtest(
+        tickers=req.tickers,
+        start_date_str=req.start_date,
+        end_date_str=req.end_date,
+        risk_dollars=req.risk_dollars,
+        rr_ratio=req.rr_ratio
+    )
+    return res
+
+
