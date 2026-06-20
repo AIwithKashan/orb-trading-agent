@@ -237,6 +237,20 @@ def run_bot_loop(bot: UserBot) -> None:
                 bot.activity = "Calculating ORB levels for 50 stocks..."
                 bot.add_log("[CALC] Computing opening range breakout levels...")
                 
+                # Check if the market is actually open today (handles US holidays)
+                if bot.broker:
+                    try:
+                        clock = bot.broker.api.get_clock()
+                        if not clock.is_open:
+                            bot.add_log("[SYSTEM] Market is closed today (Market Holiday). Standing by.")
+                            bot.activity = "Market closed (Holiday). Standing by."
+                            bot.orb_levels_calculated = True
+                            if not _interruptible_sleep(bot, 300):
+                                break
+                            continue
+                    except Exception as e:
+                        logger.warning(f"Failed to check Alpaca clock: {e}")
+                
                 # Try fetching consolidated data from Yahoo Finance for all stocks
                 yfinance_df = None
                 try:
