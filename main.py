@@ -34,34 +34,42 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[
 @app.on_event("startup")
 async def startup_event():
     logger.info("Server starting up. Initializing Firebase DB connection...")
-    db = auth.get_firestore_client()
-    if not db:
-        logger.warning("Firestore client not available. Cannot auto-start user bots.")
-        return
-        
-    try:
-        users = db.collection("users").stream()
-        active_count = 0
-        for doc in users:
-            user_data = doc.to_dict()
-            uid = doc.id
-            if user_data.get("onboarded", False):
-                dry_run = user_data.get("dry_run", True)
-                keys = firebase_db.get_user_alpaca_keys(uid)
-                if dry_run or keys:
-                    settings = {
-                        "bot_active": user_data.get("bot_active", True),
-                        "trade_limit": user_data.get("trade_limit", 3),
-                        "dry_run": dry_run,
-                        "stop_loss_pct": user_data.get("stop_loss_pct", 0.0),
-                        "take_profit_pct": user_data.get("take_profit_pct", 0.0),
-                        "risk_dollars": user_data.get("risk_dollars", 10.0)
-                    }
-                    bot_manager.start_bot(uid, keys, settings)
-                    active_count += 1
-        logger.info(f"Auto-started {active_count} user bot threads on startup.")
-    except Exception as e:
-        logger.error(f"Error auto-starting user bots on startup: {e}")
+    
+    def _auto_start_bots():
+        """Background thread to auto-start user bots without blocking the HTTP server."""
+        import time
+        time.sleep(2)  # Small delay to let uvicorn fully bind
+        db = auth.get_firestore_client()
+        if not db:
+            logger.warning("Firestore client not available. Cannot auto-start user bots.")
+            return
+        try:
+            users = db.collection("users").stream()
+            active_count = 0
+            for doc in users:
+                user_data = doc.to_dict()
+                uid = doc.id
+                if user_data.get("onboarded", False):
+                    dry_run = user_data.get("dry_run", True)
+                    keys = firebase_db.get_user_alpaca_keys(uid)
+                    if dry_run or keys:
+                        settings = {
+                            "bot_active": user_data.get("bot_active", True),
+                            "trade_limit": user_data.get("trade_limit", 3),
+                            "dry_run": dry_run,
+                            "stop_loss_pct": user_data.get("stop_loss_pct", 0.0),
+                            "take_profit_pct": user_data.get("take_profit_pct", 0.0),
+                            "risk_dollars": user_data.get("risk_dollars", 10.0)
+                        }
+                        bot_manager.start_bot(uid, keys, settings)
+                        active_count += 1
+            logger.info(f"Auto-started {active_count} user bot threads on startup.")
+        except Exception as e:
+            logger.error(f"Error auto-starting user bots on startup: {e}")
+    
+    import threading
+    t = threading.Thread(target=_auto_start_bots, daemon=True)
+    t.start()
 
 @app.get("/", response_class=HTMLResponse)
 def get_dashboard() -> HTMLResponse:
@@ -417,7 +425,7 @@ class BacktestRequest(BaseModel):
     rr_ratio: float = 1.5
 
 @app.post("/api/backtest")
-async def api_backtest(req: BacktestRequest, user: Dict[str, Any] = Depends(auth.get_current_user)) -> Dict[str, Any]:
+async def api_backtest(req: BacktestRequest, user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
     """Runs a historical simulation of the ORB strategy for a list of tickers and date range."""
     from strategy import run_orb_backtest
     res = run_orb_backtest(
