@@ -595,7 +595,10 @@ def run_bot_loop(bot: UserBot) -> None:
                             equity = bot.account_equity if bot.account_equity > 0 else 500.0
                             risk_dollars = bot.settings.get("risk_dollars", 10.0)
                             qty = tracker.calculate_position_size(price, sl, equity=equity, risk_dollars=risk_dollars)
-                            qty = round(qty, 4)
+                            # Convert to integer (whole shares) because Alpaca does not support fractional shares for bracket orders
+                            qty = int(qty)
+                            if qty < 1:
+                                qty = 1
                             
                             bot.add_log(
                                 f"[TRADE] {side} {symbol} @ ${price:.2f} | "
