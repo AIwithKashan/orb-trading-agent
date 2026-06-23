@@ -64,6 +64,10 @@ class AlpacaBroker:
             if side_lower not in ['buy', 'sell']:
                 raise ValueError("Order side must be 'buy' or 'sell'")
             
+            # Round to 2 decimal places to satisfy Alpaca minimum pricing criteria (avoid sub-penny errors)
+            take_profit_price = round(float(take_profit_price), 2)
+            stop_loss_price = round(float(stop_loss_price), 2)
+            
             order_params = {
                 "symbol": symbol.upper(),
                 "qty": qty,

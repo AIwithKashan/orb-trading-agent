@@ -540,6 +540,9 @@ def run_bot_loop(bot: UserBot) -> None:
                             triggered = True
                         
                         if triggered and side:
+                            sl = round(sl, 2)
+                            tp = round(tp, 2)
+                            
                             # Compute Breakout Quality Score
                             # 1. Opening range width (narrower range = tight stop loss = higher ratio)
                             range_width_pct = (tracker.orb_high - tracker.orb_low) / (tracker.orb_mid or 1.0)

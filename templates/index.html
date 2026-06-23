@@ -1294,8 +1294,6 @@
     <!-- Beautiful Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
 
-    </div>
-
     <!-- UI CORE LOGIC & FIREBASE INTEGRATION -->
     <script>
         let firebaseConfig = null;
@@ -1308,6 +1306,11 @@
         let uiPollInterval = null;
         let lastTrades = null;
         let connectionFailures = 0;
+
+        function setLoaderProgress(pct) {
+            const progress = document.getElementById('loader-progress');
+            if (progress) progress.style.width = pct + '%';
+        }
 
         // Toast Notification System
         function showToast(message, type = 'info') {
@@ -1448,6 +1451,7 @@
 
         // Fetch Firebase Credentials from FastAPI Server
         async function bootstrapFirebase() {
+            setLoaderProgress(20);
             try {
                 const loaderStatus = document.getElementById('loader-status');
                 
@@ -1459,12 +1463,14 @@
                     throw new Error("Missing FIREBASE_WEB_API_KEY. Configure in your environment.");
                 }
 
+                setLoaderProgress(50);
                 // Initialize Firebase
                 loaderStatus.textContent = 'Initializing secure auth module...';
                 firebase.initializeApp(firebaseConfig);
                 
                 // Track auth state changes
                 firebase.auth().onAuthStateChanged(async (user) => {
+                    setLoaderProgress(75);
                     if (user) {
                         loaderStatus.textContent = 'Verifying security signature...';
                         idToken = await user.getIdToken();
@@ -1543,19 +1549,22 @@
         }
 
         function hideLoader() {
+            setLoaderProgress(100);
             const loader = document.getElementById('loader-screen');
             if (loader) {
-                gsap.to(loader, {
-                    opacity: 0,
-                    duration: 0.5,
-                    onComplete: () => {
-                        loader.style.display = 'none';
-                        // Premium entry animations
-                        gsap.from("header", { y: -30, opacity: 0, duration: 0.6, ease: "power3.out" });
-                        gsap.from(".hud-grid-overlay", { opacity: 0, duration: 1.5 });
-                        gsap.from(".tab-view > *", { y: 15, opacity: 0, duration: 0.5, stagger: 0.08, ease: "power2.out" });
-                    }
-                });
+                setTimeout(() => {
+                    gsap.to(loader, {
+                        opacity: 0,
+                        duration: 0.5,
+                        onComplete: () => {
+                            loader.style.display = 'none';
+                            // Premium entry animations
+                            gsap.from("header", { y: -30, opacity: 0, duration: 0.6, ease: "power3.out" });
+                            gsap.from(".hud-grid-overlay", { opacity: 0, duration: 1.5 });
+                            gsap.from(".tab-view > *", { y: 15, opacity: 0, duration: 0.5, stagger: 0.08, ease: "power2.out" });
+                        }
+                    });
+                }, 200);
             }
         }
 
@@ -1640,7 +1649,10 @@
                              log.includes('[LIQUIDATE]') ? 'text-red-500 font-bold' :
                              'text-emerald-450';
             
-            consoleDiv.insertAdjacentHTML('beforeend', `<div class="${logClass}">${log}</div>`);
+            const logLine = document.createElement('div');
+            logLine.className = logClass;
+            logLine.textContent = log;
+            consoleDiv.appendChild(logLine);
             
             // Cap visual history log list to 150 items
             if (consoleDiv.children.length > 150) {
@@ -1696,7 +1708,7 @@
                 equityChartInstance.destroy();
             }
             
-            const isDark = document.body.classList.contains('dark-theme');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const lineColor = '#10b981'; 
             const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
             const textColor = isDark ? '#94a3b8' : '#64748b';
@@ -1841,7 +1853,9 @@
                 currentUser = null;
                 idToken = null;
                 document.getElementById('dashboard-panel').classList.add('hidden');
+                document.getElementById('dashboard-panel').style.display = 'none';
                 document.getElementById('auth-panel').classList.remove('hidden');
+                document.getElementById('auth-panel').style.display = 'flex';
             } catch (err) {
                 console.error("Sign out failed:", err);
             }
@@ -1906,9 +1920,15 @@
             const res = await fetch(url, options);
             if (res.status === 401) {
                 // Token might have expired, refresh
-                idToken = await firebase.auth().currentUser.getIdToken(true);
-                options.headers['Authorization'] = `Bearer ${idToken}`;
-                return await fetch(url, options);
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    idToken = await user.getIdToken(true);
+                    options.headers['Authorization'] = `Bearer ${idToken}`;
+                    return await fetch(url, options);
+                } else {
+                    signOutUser();
+                    return null;
+                }
             }
             return res;
         }
@@ -1920,11 +1940,19 @@
                 if (!statusRes || !statusRes.ok) {
                     throw new Error("HTTP connection failed");
                 }
-                currentStatus = await statusRes.json();
+                try {
+                    currentStatus = await statusRes.json();
+                } catch (e) {
+                    throw new Error("Invalid status JSON response");
+                }
                 
                 const levelsRes = await authedFetch('/api/levels');
                 if (levelsRes && levelsRes.ok) {
-                    currentLevels = await levelsRes.json();
+                    try {
+                        currentLevels = await levelsRes.json();
+                    } catch (e) {
+                        console.error("Failed to parse levels JSON", e);
+                    }
                 }
 
                 // Check for new trades / closed trades
@@ -2236,7 +2264,9 @@
         async function fetchHistoryLogs() {
             try {
                 const res = await authedFetch('/api/history');
-                if (!res) return;
+                if (!res || !res.ok) {
+                    throw new Error("Failed to fetch history logs");
+                }
                 const data = await res.json();
                 
                 // Update cumulative metrics
@@ -2565,7 +2595,7 @@
                 const minDate = new Date();
                 minDate.setDate(today.getDate() - 59);
                 startInput.min = minDate.toISOString().split('T')[0];
-                endInput.min = today.toISOString().split('T')[0];
+                endInput.min = minDate.toISOString().split('T')[0];
             }
         }
 
