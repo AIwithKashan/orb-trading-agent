@@ -162,6 +162,36 @@ def delete_user_data(uid: str) -> bool:
         return False
 
 
+# =====================================================================
+# TRACKED TICKERS (CUSTOM WATCHLIST)
+# =====================================================================
+
+def get_tracked_tickers(uid: str) -> List[str]:
+    """Retrieves the user's custom tracked tickers list from Firestore."""
+    user = get_user(uid)
+    if not user:
+        return []
+    return user.get("tracked_tickers", [])
+
+
+def save_tracked_tickers(uid: str, tickers: List[str]) -> bool:
+    """Saves the user's custom tracked tickers list to Firestore."""
+    db = get_firestore_client()
+    if not db:
+        return False
+    try:
+        # Sanitize: uppercase, strip whitespace, unique, max 200 symbols
+        clean = list({t.strip().upper() for t in tickers if t.strip()})[:200]
+        db.collection("users").document(uid).update({"tracked_tickers": clean})
+        if uid in _user_cache:
+            del _user_cache[uid]
+        logger.info(f"Saved {len(clean)} tracked tickers for user {uid}")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving tracked tickers for user {uid}: {e}")
+        return False
+
+
 
 def get_user_alpaca_keys(uid: str) -> Optional[Dict[str, str]]:
     """Retrieves and decrypts the user's Alpaca API keys."""

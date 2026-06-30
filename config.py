@@ -16,8 +16,8 @@ FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "")
 # Encryption key for API keys at rest (Fernet)
 ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
 
-# Alpaca defaults (used only for fallback / testing)
+# Server-level Alpaca credentials — used ONLY for fetching real-time market data.
+# No trading orders are ever placed. Configure once in server environment / HF Space secrets.
+ALPACA_API_KEY: str = os.getenv("ALPACA_API_KEY", "")
+ALPACA_SECRET_KEY: str = os.getenv("ALPACA_SECRET_KEY", "")
 ALPACA_BASE_URL: str = os.getenv("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")
-
-# Operation Mode
-DRY_RUN_MODE: bool = os.getenv("DRY_RUN_MODE", "false").lower() in ("true", "1", "yes")
