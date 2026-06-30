@@ -466,8 +466,10 @@
                             
                             <!-- Breakout status filter -->
                             <div class="flex border border-slate-200 bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
-                                <button id="filter-all-btn" onclick="setFilter('all')" class="px-3 py-1 bg-white text-blue-600 rounded-md shadow-sm border border-slate-150">All</button>
-                                <button id="filter-breakouts-btn" onclick="setFilter('breakouts')" class="px-3 py-1 rounded-md text-slate-500">Breakouts</button>
+                                <button id="filter-all-btn" onclick="setFilter('all')" class="px-2.5 py-1 bg-white text-blue-600 rounded-md shadow-sm border border-slate-150 transition-all duration-200">All</button>
+                                <button id="filter-breakouts-btn" onclick="setFilter('breakouts')" class="px-2.5 py-1 rounded-md text-slate-500 transition-all duration-200">Breakouts</button>
+                                <button id="filter-near-btn" onclick="setFilter('near')" class="px-2.5 py-1 rounded-md text-slate-500 transition-all duration-200">Near Breakout</button>
+                                <button id="filter-inside-btn" onclick="setFilter('inside')" class="px-2.5 py-1 rounded-md text-slate-500 transition-all duration-200">Inside Range</button>
                             </div>
                         </div>
                     </div>
@@ -1518,7 +1520,7 @@
                             // Initialize UI loop
                             fetchBotState();
                             if (uiPollInterval) clearInterval(uiPollInterval);
-                            uiPollInterval = setInterval(fetchBotState, 3000);
+                            uiPollInterval = setInterval(fetchBotState, 1000);
                             
                             // Initialize SSE system logs and health status checks
                             startLogsSSE();
@@ -2054,32 +2056,93 @@
                 `).join('');
             } else {
                 const tickers = Object.keys(currentLevels);
+                const tickerData = [];
+                
                 tickers.forEach(symbol => {
                     const levels = currentLevels[symbol] || { orb_high: 0, orb_low: 0, orb_mid: 0 };
                     const price = currentStatus.prices[symbol] || levels.orb_mid || 0.0;
                     
                     if (searchQuery && !symbol.includes(searchQuery)) return;
-
-                    let isBreakout = false;
-                    let breakoutBadgeClass = "text-slate-400 bg-slate-100 border border-slate-200";
-                    let breakoutText = "STANDARD";
-                    let cardBorder = "border-slate-200";
-
+                    
+                    let state = "INSIDE";
+                    let score = 1;
+                    let distance = 0.0;
+                    
                     if (levels.orb_high > 0) {
                         if (price >= levels.orb_high) {
-                            breakoutBadgeClass = "text-emerald-750 bg-emerald-50 border border-emerald-200 shadow-sm font-bold";
-                            breakoutText = "BULLISH";
-                            cardBorder = "border-emerald-500/50 neon-border-green bg-emerald-50/10";
-                            isBreakout = true;
+                            state = "BULLISH";
+                            score = 3;
+                            distance = (price - levels.orb_high) / levels.orb_high;
                         } else if (price <= levels.orb_low) {
-                            breakoutBadgeClass = "text-red-750 bg-red-50 border border-red-200 shadow-sm font-bold";
-                            breakoutText = "BEARISH";
-                            cardBorder = "border-red-500/50 neon-border-red bg-red-50/10";
-                            isBreakout = true;
+                            state = "BEARISH";
+                            score = 3;
+                            distance = (levels.orb_low - price) / levels.orb_low;
+                        } else {
+                            const distHigh = (levels.orb_high - price) / levels.orb_high;
+                            const distLow = (price - levels.orb_low) / levels.orb_low;
+                            if (distHigh <= 0.005) {
+                                state = "NEAR LONG";
+                                score = 2;
+                                distance = distHigh;
+                            } else if (distLow <= 0.005) {
+                                state = "NEAR SHORT";
+                                score = 2;
+                                distance = distLow;
+                            } else {
+                                state = "INSIDE";
+                                score = 1;
+                                distance = Math.min(distHigh, distLow);
+                            }
                         }
                     }
+                    
+                    tickerData.push({ symbol, levels, price, state, score, distance });
+                });
 
-                    if (currentFilter === 'breakouts' && !isBreakout) return;
+                // Filter
+                let filteredData = tickerData;
+                if (currentFilter === 'breakouts') {
+                    filteredData = tickerData.filter(d => d.state === 'BULLISH' || d.state === 'BEARISH');
+                } else if (currentFilter === 'near') {
+                    filteredData = tickerData.filter(d => d.state === 'NEAR LONG' || d.state === 'NEAR SHORT');
+                } else if (currentFilter === 'inside') {
+                    filteredData = tickerData.filter(d => d.state === 'INSIDE');
+                }
+
+                // Sort: breakouts first, then near-breakouts, then inside. Within each, sort by distance ascending
+                filteredData.sort((a, b) => {
+                    if (b.score !== a.score) {
+                        return b.score - a.score;
+                    }
+                    return a.distance - b.distance;
+                });
+
+                filteredData.forEach(({ symbol, levels, price, state, distance }) => {
+                    let breakoutBadgeClass = "text-slate-400 bg-slate-100 border border-slate-200";
+                    let breakoutText = state;
+                    let cardBorder = "border-slate-200";
+                    let distanceHtml = "";
+
+                    if (state === "BULLISH") {
+                        breakoutBadgeClass = "text-emerald-750 bg-emerald-50 border border-emerald-200 shadow-sm font-bold";
+                        cardBorder = "border-emerald-500/50 neon-border-green bg-emerald-50/10";
+                        distanceHtml = `<div class="text-[8px] text-emerald-600 font-bold mt-1">BROKEN OUT (+${(distance * 100).toFixed(2)}%)</div>`;
+                    } else if (state === "BEARISH") {
+                        breakoutBadgeClass = "text-red-750 bg-red-50 border border-red-200 shadow-sm font-bold";
+                        cardBorder = "border-red-500/50 neon-border-red bg-red-50/10";
+                        distanceHtml = `<div class="text-[8px] text-red-500 font-bold mt-1">BROKEN OUT (-${(distance * 100).toFixed(2)}%)</div>`;
+                    } else if (state === "NEAR LONG") {
+                        breakoutBadgeClass = "text-amber-700 bg-amber-50 border border-amber-250 shadow-sm font-bold animate-pulse";
+                        cardBorder = "border-amber-500/50 bg-amber-50/5";
+                        distanceHtml = `<div class="text-[8px] text-amber-600 font-bold mt-1">NEAR HIGH (-${(distance * 100).toFixed(2)}%)</div>`;
+                    } else if (state === "NEAR SHORT") {
+                        breakoutBadgeClass = "text-amber-700 bg-amber-50 border border-amber-250 shadow-sm font-bold animate-pulse";
+                        cardBorder = "border-amber-500/50 bg-amber-50/5";
+                        distanceHtml = `<div class="text-[8px] text-amber-600 font-bold mt-1">NEAR LOW (+${(distance * 100).toFixed(2)}%)</div>`;
+                    } else {
+                        breakoutText = "INSIDE";
+                        distanceHtml = `<div class="text-[8px] text-slate-400 mt-1">GAP TO LINE: ${(distance * 100).toFixed(2)}%</div>`;
+                    }
 
                     const cardHtml = `
                         <div onclick="loadTradingViewWidget('${symbol}')" class="glass-panel border ${cardBorder} p-3 rounded-lg flex flex-col justify-between cursor-pointer hover:scale-[1.02] transition-transform duration-200">
@@ -2094,6 +2157,7 @@
                                         Load Chart <i class="ph ph-chart-line-up"></i>
                                     </span>
                                 </div>
+                                ${distanceHtml}
                             </div>
                             
                             <div class="mt-2.5 pt-1.5 border-t border-slate-200/50 flex flex-col gap-0.5 text-[8px] text-slate-400 uppercase font-mono">
@@ -2207,16 +2271,18 @@
 
         function setFilter(filterType) {
             currentFilter = filterType;
-            document.getElementById('filter-all-btn').classList.toggle('bg-white', filterType === 'all');
-            document.getElementById('filter-all-btn').classList.toggle('text-blue-600', filterType === 'all');
-            document.getElementById('filter-all-btn').classList.toggle('shadow-sm', filterType === 'all');
-            document.getElementById('filter-all-btn').classList.toggle('text-slate-500', filterType !== 'all');
-
-            document.getElementById('filter-breakouts-btn').classList.toggle('bg-white', filterType === 'breakouts');
-            document.getElementById('filter-breakouts-btn').classList.toggle('text-blue-600', filterType === 'breakouts');
-            document.getElementById('filter-breakouts-btn').classList.toggle('shadow-sm', filterType === 'breakouts');
-            document.getElementById('filter-breakouts-btn').classList.toggle('text-slate-500', filterType !== 'breakouts');
-
+            const buttons = ['all', 'breakouts', 'near', 'inside'];
+            buttons.forEach(b => {
+                const btn = document.getElementById(`filter-${b}-btn`);
+                if (btn) {
+                    btn.classList.toggle('bg-white', filterType === b);
+                    btn.classList.toggle('text-blue-600', filterType === b);
+                    btn.classList.toggle('shadow-sm', filterType === b);
+                    btn.classList.toggle('border', filterType === b);
+                    btn.classList.toggle('border-slate-150', filterType === b);
+                    btn.classList.toggle('text-slate-500', filterType !== b);
+                }
+            });
             renderUI();
         }
 

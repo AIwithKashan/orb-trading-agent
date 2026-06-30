@@ -32,7 +32,8 @@ LIQUIDATION_TIME = dt_time(15, 55)
 MARKET_CLOSE_TIME = dt_time(16, 0)
 
 RISK_REWARD_RATIO = 1.5
-LOOP_INTERVAL = 15
+MAX_CHASE_PCT = 0.005  # Max 0.5% deviation from boundary to prevent chasing late entries
+LOOP_INTERVAL = 2
 
 
 class UserBot:
@@ -552,6 +553,10 @@ def run_bot_loop(bot: UserBot) -> None:
                                 distance_pct = (price - tracker.orb_high) / tracker.orb_high
                             else:
                                 distance_pct = (tracker.orb_low - price) / tracker.orb_low
+                            
+                            # Filter out late entries where price has already moved past our max chase threshold
+                            if distance_pct > MAX_CHASE_PCT:
+                                continue
                             
                             if 0.001 <= distance_pct <= 0.015:
                                 distance_factor = 1.0     # Sweet spot (0.1% to 1.5% breakout)

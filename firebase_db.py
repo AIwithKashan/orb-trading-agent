@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import pytz
@@ -9,19 +10,27 @@ from encryption import encrypt_value, decrypt_value
 logger = logging.getLogger("ORBBot")
 
 
-# =====================================================================
-# USER OPERATIONS
-# =====================================================================
+# In-memory TTL cache for user records to prevent Firestore read limit hits on fast polling
+_user_cache = {}
+USER_CACHE_TTL = 10.0  # seconds
 
 def get_user(uid: str) -> Optional[Dict[str, Any]]:
-    """Retrieves a user document from Firestore."""
+    """Retrieves a user document from Firestore, using a local TTL cache."""
+    now = time.time()
+    if uid in _user_cache:
+        cached_val, expiry = _user_cache[uid]
+        if now < expiry:
+            return cached_val
+            
     db = get_firestore_client()
     if not db:
         return None
     try:
         doc = db.collection("users").document(uid).get()
         if doc.exists:
-            return doc.to_dict()
+            user_data = doc.to_dict()
+            _user_cache[uid] = (user_data, now + USER_CACHE_TTL)
+            return user_data
         return None
     except Exception as e:
         logger.error(f"Error fetching user {uid}: {e}")
@@ -119,6 +128,9 @@ def save_user_settings(uid: str, settings: Dict[str, Any]) -> bool:
         if update_data:
             user_ref.update(update_data)
             logger.info(f"Settings saved for user {uid}")
+            # Invalidate cache
+            if uid in _user_cache:
+                del _user_cache[uid]
         return True
     except Exception as e:
         logger.error(f"Error saving settings for user {uid}: {e}")
@@ -141,6 +153,9 @@ def delete_user_data(uid: str) -> bool:
         # Delete user settings doc
         db.collection("users").document(uid).delete()
         logger.info(f"Deleted all records for user: {uid}")
+        # Invalidate cache
+        if uid in _user_cache:
+            del _user_cache[uid]
         return True
     except Exception as e:
         logger.error(f"Error deleting user database records for {uid}: {e}")
