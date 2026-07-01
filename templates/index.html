@@ -556,6 +556,9 @@ async function initFirebase() {
     const cfg = await fetch('/api/config').then(r => r.json());
     firebase.initializeApp(cfg);
 
+    // Force local persistence to combat iframe storage drops
+    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
+
     firebase.auth().onAuthStateChanged(async user => {
         if (user) {
             currentUser = user;
