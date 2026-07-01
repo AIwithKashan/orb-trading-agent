@@ -756,11 +756,16 @@ function setFilter(f) {
 
 function renderGrid() {
     const grid    = document.getElementById('tickers-grid');
-    const levels  = currentLevels;
+    const levels  = currentLevels || {};
     const prices  = currentStatus.prices || {};
     const query   = (document.getElementById('search-input')?.value || '').toUpperCase().trim();
 
-    if (Object.keys(levels).length === 0) {
+    // Use currentTickers if available, otherwise fallback to levels keys
+    const activeSymbols = currentTickers && currentTickers.length > 0 
+        ? currentTickers 
+        : Object.keys(levels);
+
+    if (activeSymbols.length === 0 && !currentStatus.screener_running) {
         grid.innerHTML = Array(10).fill(0).map(() => `
             <div class="card" style="padding:12px; display:flex; flex-direction:column; gap:8px;">
                 <div class="skeleton" style="height:10px; width:50%;"></div>
@@ -773,31 +778,35 @@ function renderGrid() {
 
     // Build enriched data
     const items = [];
-    for (const [sym, lvl] of Object.entries(levels)) {
+    for (const sym of activeSymbols) {
         if (query && !sym.includes(query)) continue;
+        const lvl = levels[sym] || { orb_high: 0, orb_low: 0, orb_mid: 0 };
         const price = prices[sym] || lvl.orb_mid || 0;
-        let state = 'INSIDE', score = 0, distance = 0;
+        
+        let state = 'WAITING', score = 0, distance = 0;
 
         if (lvl.orb_high > 0) {
             if (price >= lvl.orb_high) {
-                state = 'BULLISH'; score = 3;
+                state = 'BULLISH'; score = 4;
                 distance = (price - lvl.orb_high) / lvl.orb_high;
             } else if (price <= lvl.orb_low) {
-                state = 'BEARISH'; score = 3;
+                state = 'BEARISH'; score = 4;
                 distance = (lvl.orb_low - price) / lvl.orb_low;
             } else {
                 const dH = (lvl.orb_high - price) / lvl.orb_high;
                 const dL = (price - lvl.orb_low)  / lvl.orb_low;
-                if (dH <= 0.005) { state = 'NEAR LONG';  score = 2; distance = dH; }
-                else if (dL <= 0.005) { state = 'NEAR SHORT'; score = 2; distance = dL; }
-                else { state = 'INSIDE'; score = 1; distance = Math.min(dH, dL); }
+                if (dH <= 0.005) { state = 'NEAR LONG';  score = 3; distance = dH; }
+                else if (dL <= 0.005) { state = 'NEAR SHORT'; score = 3; distance = dL; }
+                else { state = 'INSIDE'; score = 2; distance = Math.min(dH, dL); }
             }
+        } else {
+            score = 1; // Waiting for data (market closed / standby)
         }
 
         // Apply filter
-        if (currentFilter === 'breakouts' && score !== 3) continue;
-        if (currentFilter === 'near'      && score !== 2) continue;
-        if (currentFilter === 'inside'    && score !== 1) continue;
+        if (currentFilter === 'breakouts' && score !== 4) continue;
+        if (currentFilter === 'near'      && score !== 3) continue;
+        if (currentFilter === 'inside'    && score !== 2) continue;
 
         items.push({ sym, price, lvl, state, score, distance });
     }
@@ -829,9 +838,13 @@ function renderGrid() {
             badgeHtml = `<span class="badge badge-amber">≈ Near Short</span>`;
             extraHtml = `<div style="font-size:9px; color:var(--amber); font-weight:600; margin-top:4px;">${(distance*100).toFixed(2)}% to ORB Low</div>`;
             cardClass = 'ticker-card card near';
-        } else {
+        } else if (state === 'INSIDE') {
             badgeHtml = `<span class="badge badge-slate">Inside</span>`;
             extraHtml = `<div style="font-size:9px; color:var(--text-3); margin-top:4px;">${(distance*100).toFixed(2)}% to line</div>`;
+            cardClass = 'ticker-card card';
+        } else {
+            badgeHtml = `<span class="badge badge-slate" style="opacity:0.6;">Standby</span>`;
+            extraHtml = `<div style="font-size:9px; color:var(--text-3); margin-top:4px; opacity:0.6;">Market Closed</div>`;
             cardClass = 'ticker-card card';
         }
 
