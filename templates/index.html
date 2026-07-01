@@ -217,16 +217,33 @@
 
         /* ── TradingView chart overlay ─────────────────────────── */
         #chart-overlay {
-            position: fixed; inset: 0; z-index: 500;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
+            position: fixed; inset: 0; z-index: 9000;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(6px);
             display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
         }
         #chart-overlay.open { opacity: 1; pointer-events: all; }
         #chart-box {
             background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-            width: min(900px, 95vw); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+            width: min(1160px, 96vw); height: 88vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+        }
+        #chart-box-header {
+            padding: 14px 18px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+        #tradingview-chart {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+        }
+        #tradingview-chart iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
         }
 
         /* ── Ticker pill (watchlist) ─────────────────────────────── */
@@ -307,7 +324,13 @@
             <!-- Status bar -->
             <div id="status-bar" style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-2);">
                 <span class="live-dot" id="status-dot" style="display:none;"></span>
-                <span id="activity-text" style="max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Connecting...</span>
+                <span id="activity-text" style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Connecting...</span>
+            </div>
+            <!-- PKT clock -->
+            <div style="display:flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:5px 12px;">
+                <i class="ph ph-clock" style="color:var(--text-3); font-size:13px;"></i>
+                <span id="pkt-clock" class="mono" style="font-size:12px; font-weight:600; color:var(--text-1); letter-spacing:0.05em;">--:--:--</span>
+                <span style="font-size:9px; font-weight:700; color:var(--text-3); letter-spacing:0.08em;">PKT</span>
             </div>
             <!-- Right controls -->
             <div style="display:flex; align-items:center; gap:8px;">
@@ -490,16 +513,31 @@
 <!-- ── TradingView chart overlay ──────────────────────────────────── -->
 <div id="chart-overlay" onclick="closeChart(event)">
     <div id="chart-box">
-        <div style="padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:8px;">
+        <div id="chart-box-header">
+            <div style="display:flex; align-items:center; gap:10px;">
                 <span class="live-dot"></span>
-                <span id="chart-title" style="font-size:14px; font-weight:700; color:var(--text-1);">Chart</span>
+                <div>
+                    <span id="chart-title" style="font-size:15px; font-weight:700; color:var(--text-1);">Chart</span>
+                    <span id="chart-subtitle" style="font-size:11px; color:var(--text-3); margin-left:8px;">5-min · ORB Range</span>
+                </div>
             </div>
-            <button onclick="closeChart()" class="btn btn-ghost btn-sm"><i class="ph ph-x"></i></button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div style="display:flex; gap:4px;">
+                    <button onclick="setChartInterval('1')"  class="chart-int-btn btn btn-ghost btn-sm">1m</button>
+                    <button onclick="setChartInterval('5')"  class="chart-int-btn btn btn-ghost btn-sm active-int">5m</button>
+                    <button onclick="setChartInterval('15')" class="chart-int-btn btn btn-ghost btn-sm">15m</button>
+                    <button onclick="setChartInterval('D')"  class="chart-int-btn btn btn-ghost btn-sm">1D</button>
+                </div>
+                <button onclick="closeChart()" class="btn btn-ghost btn-sm" style="margin-left:4px;"><i class="ph ph-x"></i></button>
+            </div>
         </div>
-        <div id="tradingview-chart" style="flex:1; min-height:500px;"></div>
+        <div id="tradingview-chart"></div>
     </div>
 </div>
+<style>
+.chart-int-btn { font-size:11px; padding:4px 9px; }
+.chart-int-btn.active-int { background: var(--accent); color:#fff; border-color: var(--accent); }
+</style>
 
 <!-- ████████████████  SCRIPTS  ████████████████ -->
 <script>
@@ -928,37 +966,76 @@ async function stopScreener() {
 
 // ── TradingView chart overlay ─────────────────────────────────────────────
 let chartWidget = null;
+let chartSymbol = '';
+let chartInterval = '5';
+
 function openChart(symbol) {
+    chartSymbol = symbol;
     const overlay = document.getElementById('chart-overlay');
-    const title   = document.getElementById('chart-title');
-    const box     = document.getElementById('tradingview-chart');
+    const title    = document.getElementById('chart-title');
 
-    title.textContent = `${symbol} — Live Chart`;
-    box.innerHTML = '';
+    title.textContent = symbol;
+    document.getElementById('chart-subtitle').textContent = `${chartInterval}m · ORB Screener`;
     overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    _renderChart();
+}
 
+function _renderChart() {
+    const box = document.getElementById('tradingview-chart');
+    box.innerHTML = '';
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    // Try to detect exchange; default to NASDAQ, fallback handled by TradingView
+    const exchangeMap = { 'SPY':'AMEX','QQQ':'NASDAQ','IWM':'AMEX','DIA':'AMEX','GLD':'AMEX' };
+    const exchange = exchangeMap[chartSymbol] || 'NASDAQ';
+
     chartWidget = new TradingView.widget({
-        autosize: true,
-        symbol: `NASDAQ:${symbol}`,
-        interval: '5',
-        timezone: 'America/New_York',
-        theme: isDark ? 'Dark' : 'Light',
-        style: '1',
-        locale: 'en',
-        toolbar_bg: isDark ? '#161b22' : '#ffffff',
+        autosize:          true,
+        symbol:            `${exchange}:${chartSymbol}`,
+        interval:          chartInterval,
+        timezone:          'Asia/Karachi',
+        theme:             isDark ? 'Dark' : 'Light',
+        style:             '1',
+        locale:            'en',
+        toolbar_bg:        isDark ? '#161b22' : '#f8fafc',
         enable_publishing: false,
         hide_side_toolbar: false,
-        container_id: 'tradingview-chart',
+        allow_symbol_change: true,
+        container_id:      'tradingview-chart',
+        studies:           ['RSI@tv-basicstudies', 'Volume@tv-basicstudies'],
+        show_popup_button: false,
+        popup_width:       '1000',
+        popup_height:      '650',
     });
+
+    // Update interval button highlights
+    document.querySelectorAll('.chart-int-btn').forEach(b => b.classList.remove('active-int'));
+    const intMap = {'1':'1m','5':'5m','15':'15m','D':'1D'};
+    document.querySelectorAll('.chart-int-btn').forEach(b => {
+        if (b.textContent === (intMap[chartInterval] || chartInterval)) b.classList.add('active-int');
+    });
+
+    document.getElementById('chart-subtitle').textContent = `${intMap[chartInterval] || chartInterval} · ORB Screener`;
+}
+
+function setChartInterval(interval) {
+    chartInterval = interval;
+    if (chartSymbol) _renderChart();
 }
 
 function closeChart(e) {
+    // Allow clicking the dark backdrop to close, but not the box itself
     if (e && e.target !== document.getElementById('chart-overlay')) return;
     document.getElementById('chart-overlay').classList.remove('open');
     document.getElementById('tradingview-chart').innerHTML = '';
+    document.body.style.overflow = '';
     chartWidget = null;
+    chartSymbol = '';
 }
+
+// Escape key closes chart
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChart({ target: document.getElementById('chart-overlay') }); });
 
 // ── Loader progress ───────────────────────────────────────────────────────
 (function animateLoader() {
@@ -972,11 +1049,28 @@ function closeChart(e) {
     }, 150);
 })();
 
+// ── PKT Live Clock ────────────────────────────────────────────────────────
+function startPKTClock() {
+    function tick() {
+        const now = new Date();
+        // PKT = UTC+5
+        const pkt = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Karachi' }));
+        const hh = String(pkt.getHours()).padStart(2,'0');
+        const mm = String(pkt.getMinutes()).padStart(2,'0');
+        const ss = String(pkt.getSeconds()).padStart(2,'0');
+        const el = document.getElementById('pkt-clock');
+        if (el) el.textContent = `${hh}:${mm}:${ss}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
     document.getElementById('theme-icon').className = saved === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
+    startPKTClock();
     initFirebase();
 });
 </script>

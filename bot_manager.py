@@ -24,6 +24,7 @@ DEFAULT_US_STOCKS = [
 
 # Market Timing (US/Eastern)
 TIMEZONE_EST = pytz.timezone('US/Eastern')
+TIMEZONE_PKT = pytz.timezone('Asia/Karachi')
 ORB_WINDOW_START = dt_time(9, 30)
 ORB_WINDOW_END   = dt_time(9, 45)
 MARKET_CLOSE_TIME = dt_time(16, 0)
@@ -85,7 +86,8 @@ class ScannerBot:
     # ------------------------------------------------------------------
     def add_log(self, msg: str) -> None:
         with self._log_lock:
-            timestamp = datetime.now(TIMEZONE_EST).strftime("%H:%M:%S")
+            # Show timestamps in PKT for user-facing logs
+            timestamp = datetime.now(TIMEZONE_PKT).strftime("%H:%M:%S PKT")
             entry = f"{timestamp} {msg}"
             self.logs.append(entry)
             if len(self.logs) > 100:
@@ -323,10 +325,10 @@ def run_scanner_loop(bot: ScannerBot) -> None:
             for sym, price in prices.items():
                 bot.current_prices[sym] = price
 
-            scan_time = now.strftime("%H:%M:%S")
+            scan_time = now.astimezone(TIMEZONE_PKT).strftime("%H:%M:%S")
             bot.activity = (
                 f"Scanning {len(bot.get_symbols())} stocks — "
-                f"{len(bot.breakout_signals)} signals today (Last: {scan_time} EST)"
+                f"{len(bot.breakout_signals)} signals today (Last: {scan_time} PKT)"
             )
 
             # ---------- Detect breakout signals ----------
@@ -348,6 +350,7 @@ def run_scanner_loop(bot: ScannerBot) -> None:
                     direction = "BEARISH"
 
                 if direction:
+                    now_pkt = now.astimezone(TIMEZONE_PKT)
                     signal = {
                         "symbol": symbol,
                         "direction": direction,
@@ -355,7 +358,7 @@ def run_scanner_loop(bot: ScannerBot) -> None:
                         "orb_high": round(tracker.orb_high, 2),
                         "orb_low": round(tracker.orb_low, 2),
                         "orb_mid": round(tracker.orb_mid, 2),
-                        "time": now.strftime("%H:%M:%S EST"),
+                        "time": now_pkt.strftime("%H:%M:%S PKT"),
                         "timestamp": now.isoformat(),
                     }
                     bot.breakout_signals.insert(0, signal)
