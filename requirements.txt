@@ -2,6 +2,7 @@ python-dotenv
 alpaca-trade-api
 fastapi
 uvicorn
+websockets==12.0
 firebase-admin
 cryptography
 pytz
