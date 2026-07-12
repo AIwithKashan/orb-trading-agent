@@ -2,7 +2,7 @@ python-dotenv
 alpaca-trade-api>=3.2.0
 PyYAML>=6.0.1
 fastapi
-uvicorn
+uvicorn==0.22.0
 websockets==10.4
 firebase-admin
 cryptography
