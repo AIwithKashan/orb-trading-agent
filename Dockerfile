@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+EXPOSE 7860
 # Expose port 7860 (Hugging Face Spaces default) or read PORT from environment
 # We'll use a shell script or python command to read the environment PORT.
 # FastAPI run via python run_bot.py which we updated to read PORT environment variable.
