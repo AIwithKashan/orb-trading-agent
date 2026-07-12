@@ -10,6 +10,8 @@ import config
 import auth
 import firebase_db
 import bot_manager
+import gold_bot_manager
+from gold_strategy import run_gold_bos_backtest
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
@@ -50,8 +52,10 @@ async def startup_event():
                     uid = doc.id
                     symbols = firebase_db.get_tracked_tickers(uid) or bot_manager.DEFAULT_US_STOCKS
                     bot_manager.start_bot(uid, symbols)
+                    # Auto-start gold scanner as well
+                    gold_bot_manager.start_gold_bot(uid)
                     count += 1
-            logger.info(f"Auto-started {count} screener threads on startup.")
+            logger.info(f"Auto-started {count} screener threads and {count} Gold threads on startup.")
         except Exception as e:
             logger.error(f"Error auto-starting screeners: {e}")
 
@@ -360,6 +364,95 @@ async def delete_account(user: Dict[str, Any] = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Failed to delete account data.")
     return {"status": "success"}
 
+
+# ─── Gold BOS Strategy Endpoints ──────────────────────────────────────────────
+
+@app.get("/api/gold/status")
+async def gold_status(user: Dict[str, Any] = Depends(get_current_user)):
+    """Returns the Gold BOS scanner status and structure levels."""
+    uid = user["uid"]
+    bot = gold_bot_manager.get_gold_bot(uid)
+    if bot:
+        return bot.get_status()
+    return {
+        "market_bias": "NEUTRAL",
+        "current_price": 0,
+        "bos_detected": False,
+        "swing_highs": [],
+        "swing_lows": [],
+        "signals_history": [],
+        "scanner_running": False,
+        "timeframe": "15m",
+        "last_scan": None,
+        "activity": "Scanner not running.",
+    }
+
+@app.post("/api/gold/start")
+async def start_gold_scanner(user: Dict[str, Any] = Depends(get_current_user)):
+    """Starts the Gold BOS scanner for the authenticated user."""
+    uid = user["uid"]
+    gold_bot_manager.start_gold_bot(uid)
+    return {"status": "started"}
+
+@app.post("/api/gold/stop")
+async def stop_gold_scanner(user: Dict[str, Any] = Depends(get_current_user)):
+    """Stops the Gold BOS scanner."""
+    uid = user["uid"]
+    gold_bot_manager.stop_gold_bot(uid)
+    return {"status": "stopped"}
+
+@app.post("/api/gold/scan")
+async def trigger_gold_scan(user: Dict[str, Any] = Depends(get_current_user)):
+    """Triggers an immediate Gold scan and returns results."""
+    uid = user["uid"]
+    bot = gold_bot_manager.get_gold_bot(uid)
+    
+    if not bot:
+        # Auto-start if not running
+        bot = gold_bot_manager.start_gold_bot(uid)
+        import time
+        time.sleep(2)  # Give it a moment to do first scan
+        
+    return bot.get_status()
+
+class GoldParamsPayload(BaseModel):
+    swing_lookback: int = 5
+    rr_ratio: float = 2.0
+    timeframe: str = "15m"
+
+@app.post("/api/gold/params")
+async def update_gold_params(payload: GoldParamsPayload, user: Dict[str, Any] = Depends(get_current_user)):
+    """Updates Gold BOS strategy parameters."""
+    uid = user["uid"]
+    bot = gold_bot_manager.get_gold_bot(uid)
+    if bot:
+        bot.update_params(
+            swing_lookback=payload.swing_lookback,
+            rr_ratio=payload.rr_ratio,
+            timeframe=payload.timeframe
+        )
+        return {"status": "updated"}
+    return {"status": "scanner_not_running"}
+
+class GoldBacktestPayload(BaseModel):
+    start_date: str
+    end_date: str
+    risk_dollars: float = 10.0
+    rr_ratio: float = 2.0
+    swing_lookback: int = 5
+    timeframe: str = "15m"
+
+@app.post("/api/gold/backtest")
+async def gold_backtest(payload: GoldBacktestPayload, user: Dict[str, Any] = Depends(get_current_user)):
+    """Runs a backtest of the Gold BOS strategy."""
+    return run_gold_bos_backtest(
+        start_date_str=payload.start_date,
+        end_date_str=payload.end_date,
+        risk_dollars=payload.risk_dollars,
+        rr_ratio=payload.rr_ratio,
+        swing_lookback=payload.swing_lookback,
+        interval=payload.timeframe,
+    )
 
 # ─── Backtest (kept for reference) ───────────────────────────────────────────
 class BacktestRequest(BaseModel):

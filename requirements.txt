@@ -7,3 +7,5 @@ firebase-admin
 cryptography
 pytz
 yfinance
+numpy
+pandas

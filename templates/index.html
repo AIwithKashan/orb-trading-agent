@@ -315,9 +315,9 @@
         <div style="max-width:1400px; margin:0 auto; padding:0 20px; height:54px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
             <!-- Logo + title -->
             <div style="display:flex; align-items:center; gap:10px;">
-                <img src="/static/logo.png" alt="ORB" style="height:28px; opacity:0.9;">
+                <img src="/static/logo.png" alt="Logo" style="height:28px; opacity:0.9;">
                 <div>
-                    <span style="font-size:14px; font-weight:700; color:var(--text-1);">ORB Screener</span>
+                    <span style="font-size:14px; font-weight:700; color:var(--text-1);">Trading Agent Pro</span>
                     <span class="badge badge-blue" style="margin-left:7px; vertical-align:middle; font-size:8px;">LIVE</span>
                 </div>
             </div>
@@ -345,8 +345,21 @@
         </div>
     </header>
 
+    <!-- ── Strategy Selector ────────────────────────────────────── -->
+    <div style="background:var(--surface); border-bottom:1px solid var(--border);">
+        <div style="max-width:1400px; margin:0 auto; padding:0 20px;">
+            <div class="tab-nav">
+                <button id="tab-orb" class="tab-item active" onclick="switchStrategy('orb')">ORB Screener (US Stocks)</button>
+                <button id="tab-gold" class="tab-item" onclick="switchStrategy('gold')">Gold BOS Strategy (XAU/USD)</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ── Content ──────────────────────────────────────────────── -->
     <main style="max-width:1400px; margin:0 auto; padding:24px 20px 48px;">
+        
+        <!-- ── ORB VIEW ────────────────────────────────────────────── -->
+        <div id="orb-view">
 
         <!-- ── Stats row ──────────────────────────────────────────── -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-bottom:24px;">
@@ -506,7 +519,89 @@
                 </div>
 
             </div>
+
+        </div> <!-- end of orb-view -->
+
+        <!-- ── GOLD VIEW ────────────────────────────────────────────── -->
+        <div id="gold-view" style="display:none;">
+            <div style="display:grid; grid-template-columns: 1fr 320px; gap:20px; align-items:start;">
+                
+                <!-- LEFT: Scanner matrix + signals table -->
+                <div style="display:flex; flex-direction:column; gap:20px; min-width:0;">
+                    
+                    <!-- Gold Scanner header -->
+                    <div class="card" style="padding:16px 20px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                            <div>
+                                <h2 style="font-size:14px; font-weight:700; color:var(--text-1);">Gold (XAU/USD) BOS Scanner</h2>
+                                <p style="font-size:11px; color:var(--text-3); margin-top:2px;">Smart Money Concepts Break of Structure (15m timeframe)</p>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <button class="btn btn-ghost btn-sm" onclick="openChart('GC=F')" style="font-size:12px;">
+                                    <i class="ph ph-chart-line-up"></i> Open Chart
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="triggerGoldScan()">
+                                    <i class="ph ph-arrows-clockwise"></i> Force Scan
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Current Structure -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px;">
+                            <div style="background:var(--surface-2); padding:12px; border-radius:8px; border:1px solid var(--border);">
+                                <div style="font-size:11px; color:var(--text-3); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Market Bias</div>
+                                <div id="gold-market-bias" style="font-size:16px; font-weight:700; color:var(--text-1);">—</div>
+                            </div>
+                            <div style="background:var(--surface-2); padding:12px; border-radius:8px; border:1px solid var(--border);">
+                                <div style="font-size:11px; color:var(--text-3); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Current Price</div>
+                                <div id="gold-current-price" class="mono" style="font-size:16px; font-weight:700; color:var(--text-1);">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Signals table -->
+                    <div class="card" style="padding:0; overflow:hidden;">
+                        <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+                            <div>
+                                <h2 style="font-size:14px; font-weight:700; color:var(--text-1);">Recent BOS Signals</h2>
+                                <p style="font-size:11px; color:var(--text-3); margin-top:2px;">Break of Structure trade setups</p>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto; max-height:320px; overflow-y:auto;">
+                            <table style="width:100%; border-collapse:collapse;">
+                                <thead style="position:sticky; top:0; background:var(--surface);">
+                                    <tr style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-3);">
+                                        <th style="text-align:left; padding:8px 10px;">Time</th>
+                                        <th style="text-align:left; padding:8px 10px;">Direction</th>
+                                        <th style="text-align:right; padding:8px 10px; font-family:monospace;">Entry</th>
+                                        <th style="text-align:right; padding:8px 10px; font-family:monospace;">SL</th>
+                                        <th style="text-align:right; padding:8px 10px; font-family:monospace;">TP</th>
+                                        <th style="text-align:right; padding:8px 10px; font-family:monospace;">Confidence</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gold-signals-tbody">
+                                    <tr><td colspan="6" style="text-align:center; padding:32px; font-size:12px; color:var(--text-3);">No Gold signals yet.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Settings sidebar -->
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div class="card" style="padding:16px 20px;">
+                        <h2 style="font-size:13px; font-weight:700; color:var(--text-1); margin-bottom:14px;">Gold Scanner Controls</h2>
+                        
+                        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+                            <button id="gold-toggle-btn" onclick="toggleGoldScanner()" class="btn btn-primary" style="width:100%; justify-content:center;">
+                                <i class="ph ph-play"></i> Start Gold Scanner
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
     </main>
 </div>
 
